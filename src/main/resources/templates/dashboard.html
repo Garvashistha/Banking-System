@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Banking System Dashboard</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet" />
+
+    <style>
+        /* Reset & base */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body, html {
+            margin: 0;
+            height: 100%;
+            font-family: 'Poppins', sans-serif;
+            background: #121212;
+            color: #e0e0e0;
+        }
+
+        /* Layout */
+        .container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: linear-gradient(180deg, #1e1e2f 0%, #14141f 100%);
+            width: 260px;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 0;
+        }
+
+        .sidebar .logo {
+            color: #66ccb7;
+            font-weight: 700;
+            font-size: 1.6rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            letter-spacing: 1.2px;
+        }
+
+        .nav-links {
+            flex-grow: 1;
+        }
+
+        .nav-links a {
+            display: flex;
+            align-items: center;
+            padding: 15px 25px;
+            color: #bbb;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 1rem;
+            transition: color 0.25s ease, background 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+
+        .nav-links a:hover {
+            background-color: #253244;
+            color: #66ccb7;
+            border-left-color: #66ccb7;
+        }
+
+        .nav-links a.active-link {
+            background-color: #253244;
+            color: #66ccb7;
+            border-left-color: #66ccb7;
+        }
+
+        .nav-links svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        /* Main content */
+        .main-content {
+            flex-grow: 1;
+            background: #181818;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 30px;
+            overflow-y: auto;
+        }
+
+        /* Top bar */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #2c2c2c;
+            color: #ccc;
+        }
+
+        .top-bar h1 {
+            font-weight: 600;
+            font-size: 1.75rem;
+            color: #66ccb7;
+            margin: 0;
+        }
+
+        .top-bar p {
+            font-weight: 500;
+            font-size: 1rem;
+            color: #ccc;
+            margin: 5px 0 0 0;
+        }
+
+        .user-profile {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .user-profile img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #66ccb7;
+            object-fit: cover;
+            transition: border-color 0.3s ease;
+        }
+
+        .user-profile:hover img {
+            border-color: #3ea89d;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            right: 0;
+            top: 50px;
+            background: #222830;
+            border-radius: 8px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.5);
+            width: 150px;
+            display: none;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .user-profile:focus-within .dropdown-menu,
+        .user-profile:hover .dropdown-menu {
+            display: flex;
+        }
+
+        .dropdown-menu a {
+            padding: 12px 20px;
+            color: #ccc;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background-color 0.25s ease;
+        }
+
+        .dropdown-menu a:hover {
+            background-color: #3ea89d;
+            color: white;
+        }
+
+        /* Dashboard sections */
+        .section {
+            margin-top: 25px;
+            background: #222830;
+            border-radius: 12px;
+            padding: 20px 25px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+        }
+
+        .section h2 {
+            margin-top: 0;
+            font-weight: 600;
+            color: #66ccb7;
+            margin-bottom: 20px;
+        }
+
+        /* Accounts list */
+        .accounts-list {
+            width: 100%;
+            border-collapse: collapse;
+            color: #ddd;
+            font-size: 0.95rem;
+        }
+
+        .accounts-list th, .accounts-list td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #333a45;
+        }
+
+        .accounts-list th {
+            color: #90e0ef;
+            font-weight: 600;
+        }
+
+        /* Transaction buttons */
+        .transaction-buttons {
+            margin: 15px 0 20px 0;
+            display: flex;
+            gap: 15px;
+        }
+
+        .transaction-buttons button {
+            background-color: #3ea89d;
+            border: none;
+            color: white;
+            padding: 12px 20px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+            flex: 1;
+        }
+
+        .transaction-buttons button:hover {
+            background-color: #66ccb7;
+        }
+
+        /* Transaction history table */
+        .transactions-table {
+            width: 100%;
+            border-collapse: collapse;
+            color: #ddd;
+            font-size: 0.95rem;
+        }
+
+        .transactions-table th, .transactions-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #333a45;
+            text-align: left;
+        }
+
+        .transactions-table th {
+            cursor: pointer;
+            color: #90e0ef;
+            font-weight: 600;
+            user-select: none;
+        }
+
+        .transactions-table tbody tr:hover {
+            background-color: #2f3b44;
+        }
+
+        .status-completed {
+            color: #66ccb7;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            color: #fcca46;
+            font-weight: 600;
+        }
+
+        .status-failed {
+            color: #df2935;
+            font-weight: 600;
+        }
+
+        /* Responsive layout */
+        @media (max-width: 900px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                flex-direction: row;
+                overflow-x: auto;
+                padding: 10px 0;
+            }
+
+            .nav-links a {
+                flex-direction: column;
+                padding: 10px 15px;
+                font-size: 0.85rem;
+            }
+
+            .nav-links svg {
+                margin: 0 0 6px 0;
+                width: 18px;
+                height: 18px;
+            }
+
+            .main-content {
+                padding: 15px 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .transaction-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="logo">BankSys</div>
+        <div class="nav-links">
+            <a th:href="@{/dashboard}" th:classappend="${activePage=='dashboard'} ? 'active-link'">Dashboard</a>
+            <a th:href="@{/customers}" th:classappend="${activePage=='customers'} ? 'active-link'">Customers</a>
+            <a th:href="@{/accounts}" th:classappend="${activePage=='accounts'} ? 'active-link'">Accounts</a>
+            <a th:href="@{/transactions}" th:classappend="${activePage=='transactions'} ? 'active-link'">Transactions</a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <h1>Dashboard</h1>
+            <p th:text="'WELCOME, ' + ${customer != null ? customer.name : user.username}">WELCOME, User</p>
+            <div class="user-profile" tabindex="0">
+                <img th:alt="${customer != null ? customer.name : user.username}"
+                     th:src="${customer != null ? 'https://ui-avatars.com/api/?name=' + customer.name : 'https://ui-avatars.com/api/?name=' + user.username}" />
+                <div class="dropdown-menu">
+                    <a th:href="@{/profile}">Profile</a>
+                    <a th:href="@{/logout}">Logout</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <section class="section" th:if="${customer != null}">
+            <h2>Quick Stats</h2>
+            <p>Total Accounts: <span th:text="${totalAccounts != null ? totalAccounts : 0}">0</span></p>
+            <p>Total Balance: ₹<span th:text="${totalBalance != null ? totalBalance : 0}">0</span></p>
+        </section>
+
+        <!-- Linked Accounts -->
+        <section class="section accounts-section" th:if="${accounts != null}">
+            <h2>Linked Accounts</h2>
+            <table class="accounts-list" th:if="${accounts.size() > 0}">
+                <thead>
+                <tr>
+                    <th>Account Number</th>
+                    <th>Account Type</th>
+                    <th>Balance</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="account : ${accounts}">
+                    <td th:text="${account != null ? account.accountId : 'N/A'}">123456</td>
+                    <td th:text="${account != null ? account.accountType : 'N/A'}">Savings</td>
+                    <td th:text="${account != null && account.balance != null ? account.balance : 0}">0</td>
+                </tr>
+                </tbody>
+            </table>
+            <p th:if="${accounts.size()==0}">No linked accounts.</p>
+        </section>
+
+        <!-- Actions -->
+        <section class="section transaction-actions" th:if="${accounts != null && accounts.size()>0}">
+            <h2>Actions</h2>
+            <div class="transaction-buttons">
+                <button th:onclick="'location.href=\'' + @{/transactions/deposit} + '\''">Deposit</button>
+                <button th:onclick="'location.href=\'' + @{/transactions/withdraw} + '\''">Withdraw</button>
+                <button th:onclick="'location.href=\'' + @{/transactions/transfer} + '\''">Transfer</button>
+            </div>
+        </section>
+
+        <!-- Transactions -->
+        <section class="section transactions-history">
+            <h2>Transaction History</h2>
+            <table class="transactions-table" th:if="${transactions != null && transactions.size() > 0}">
+                <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="trans : ${transactions}">
+                    <td th:text="${trans.timestamp != null ? trans.timestamp.toString() : 'N/A'}">Aug 01, 2025 14:30</td>
+                    <td th:text="${trans.transactionType}">Deposit</td>
+                    <td th:text="${trans.amount != null ? trans.amount : 0}">0</td>
+                    <td th:text="${trans.status != null ? (trans.status.equalsIgnoreCase('completed') ? 'Completed' : 'Pending') : 'N/A'}"
+                        th:classappend="${trans.status != null ? (trans.status.equalsIgnoreCase('completed') ? 'status-completed' : 'status-pending') : ''}">
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            <p th:if="${transactions == null || transactions.size()==0}">No transactions yet.</p>
+        </section>
+
+        <!-- Chart Section -->
+        <section class="section" th:if="${accounts != null && accounts.size() > 0}">
+            <h2>Account Balance Chart</h2>
+            <canvas id="balanceChart"></canvas>
+        </section>
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+        const labels = [
+            /* th:each="acct, acctStat : ${accounts}" */
+            /* This is JavaScript; use th:block in template to generate array or do inline array generation in backend */
+            /* Example assumes accounts are not null */
+            /* Looping through accounts */
+            /* Use a th:block below this for loop in actual template to generate labels */
+        ];
+        const data = [
+            /* Similar for balances */
+        ];
+
+        /* For robust solution, generate labels and data in backend as JSON strings and pass as model attributes */
+
+        const ctx = document.getElementById('balanceChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Account Balances',
+                    data: data,
+                    backgroundColor: '#3ea89d'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    /*]]>*/
+</script>
+
+</body>
+</html>
