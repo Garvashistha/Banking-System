@@ -1,7 +1,9 @@
 package org.bank.service;
 
 import org.bank.entities.Customer;
+import org.bank.entities.User;
 import org.bank.repository.CustomerRepository;
+import org.bank.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +15,9 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Autowired
     private CustomerRepository customerRepository;
+
+    @Autowired
+    private UserRepository userRepository;  // Needed to save User
 
     @Override
     public List<Customer> findAll() {
@@ -30,13 +35,22 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
+    public User save(User user) {
+        return userRepository.save(user);  // Implementation for save(User)
+    }
+
+    @Override
     public void deleteById(Long id) {
         customerRepository.deleteById(id);
     }
 
     @Override
-    public Customer findByUserId(Long Id) {
-        // this method must exist in CustomerRepository
-        return customerRepository.findByUser_Id(Id);
+    public Optional<Customer> findByUser(User user) {
+        return customerRepository.findByUser(user); // Requires method in CustomerRepository
+    }
+
+    @Override
+    public Customer findByUserId(Long userId) {
+        return customerRepository.findByUserId(userId); // Requires method in CustomerRepository
     }
 }

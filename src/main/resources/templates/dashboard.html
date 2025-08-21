@@ -309,6 +309,8 @@
         <div class="logo">BankSys</div>
         <div class="nav-links">
             <a th:href="@{/dashboard}" th:classappend="${activePage=='dashboard'} ? 'active-link'">Dashboard</a>
+            <a th:href="@{/customers/profile}" th:classappend="${activePage=='profile'} ? 'active-link'">Profile</a>
+
             <a th:href="@{/customers}" th:classappend="${activePage=='customers'} ? 'active-link'">Customers</a>
             <a th:href="@{/accounts}" th:classappend="${activePage=='accounts'} ? 'active-link'">Accounts</a>
             <a th:href="@{/transactions}" th:classappend="${activePage=='transactions'} ? 'active-link'">Transactions</a>
@@ -325,7 +327,7 @@
                 <img th:alt="${customer != null ? customer.name : user.username}"
                      th:src="${customer != null ? 'https://ui-avatars.com/api/?name=' + customer.name : 'https://ui-avatars.com/api/?name=' + user.username}" />
                 <div class="dropdown-menu">
-                    <a th:href="@{/profile}">Profile</a>
+                    <a th:href="@{/customers/profile}">Profile</a>
                     <a th:href="@{/logout}">Logout</a>
                 </div>
             </div>
