@@ -13,4 +13,6 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     // Finds customer by the User entity itself
     Optional<Customer> findByUser(User user);
+
+    Customer findByUser_Id(Long id);
 }

@@ -1,7 +1,9 @@
 package org.bank.controller;
 
+import org.bank.entities.Account;
 import org.bank.entities.Customer;
 import org.bank.entities.User;
+import org.bank.service.AccountService;
 import org.bank.service.CustomerService;
 import org.bank.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,45 +12,49 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Controller
-@RequestMapping("/customers")
 public class CustomerController {
 
     private final CustomerService customerService;
     private final UserService userService;
+    private final AccountService accountService;
 
     @Autowired
-    public CustomerController(CustomerService customerService, UserService userService) {
+    public CustomerController(CustomerService customerService,
+                              UserService userService,
+                              AccountService accountService) {
         this.customerService = customerService;
         this.userService = userService;
+        this.accountService = accountService;
     }
 
-    // List all customers (for admin usage)
-    @GetMapping
+    // ================== DASHBOARD ==================
+
+    // ================== CUSTOMER CRUD ==================
+    @GetMapping("/customers")
     public String listCustomers(Model model) {
         List<Customer> customers = customerService.findAll();
         model.addAttribute("customers", customers);
-        return "customers"; // Only works if you have customers.html
+        model.addAttribute("activePage", "customers");
+        return "customers";
     }
 
-    // Show create form (admin usage)
-    @GetMapping("/create")
+    @GetMapping("/customers/create")
     public String showCreateForm(Model model) {
         model.addAttribute("customer", new Customer());
-        return "customer_form"; // Only works if you have customer_form.html
+        return "customer_form";
     }
 
-    // Handle customer creation
-    @PostMapping("/create")
+    @PostMapping("/customers/create")
     public String createCustomer(@ModelAttribute("customer") Customer customer) {
         customerService.save(customer);
         return "redirect:/customers";
     }
 
-    // Show edit form (admin usage)
-    @GetMapping("/edit/{id}")
+    @GetMapping("/customers/edit/{id}")
     public String showEditForm(@PathVariable Long id, Model model) {
         Customer customer = customerService.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid customer Id:" + id));
@@ -56,72 +62,115 @@ public class CustomerController {
         return "customer_form";
     }
 
-    // Handle customer update
-    @PostMapping("/update/{id}")
+    @PostMapping("/customers/update/{id}")
     public String updateCustomer(@PathVariable Long id, @ModelAttribute("customer") Customer customer) {
         customer.setCustomerId(id);
         customerService.save(customer);
         return "redirect:/customers";
     }
 
-    // Delete customer (admin usage)
-    @GetMapping("/delete/{id}")
+    @GetMapping("/customers/delete/{id}")
     public String deleteCustomer(@PathVariable Long id) {
         customerService.deleteById(id);
         return "redirect:/customers";
     }
 
-    // ================= PROFILE =================
-
-    // View profile (read-only)
-    @GetMapping("/profile")
+    // ================== PROFILE ==================
+    @GetMapping("/customers/profile")
     public String viewProfile(Model model, Authentication authentication) {
         String username = authentication.getName();
         User user = userService.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
 
         Customer customer = customerService.findByUser(user)
-                .orElseThrow(() -> new IllegalArgumentException("No customer linked with user: " + username));
+                .orElseGet(() -> autoCreateCustomer(user));
 
         model.addAttribute("user", user);
         model.addAttribute("customer", customer);
         model.addAttribute("activePage", "profile");
-        return "profile"; // profile.html (read-only view)
+        return "profile";
     }
 
-    // Show profile edit form
-    @GetMapping("/profile/edit")
+    @GetMapping("/customers/profile/edit")
     public String editProfile(Model model, Authentication authentication) {
         String username = authentication.getName();
         User user = userService.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
 
         Customer customer = customerService.findByUser(user)
-                .orElseThrow(() -> new IllegalArgumentException("No customer linked with user: " + username));
+                .orElseGet(() -> autoCreateCustomer(user));
 
         model.addAttribute("customer", customer);
         model.addAttribute("activePage", "profile");
-        return "profile_form"; // new page for editing profile
+        return "profile_form";
     }
 
-    // Handle profile update
-    @PostMapping("/profile/update")
+    @PostMapping("/customers/profile/update")
     public String updateProfile(@ModelAttribute("customer") Customer customer, Authentication authentication) {
         String username = authentication.getName();
         User user = userService.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
 
         Customer existingCustomer = customerService.findByUser(user)
-                .orElseThrow(() -> new IllegalArgumentException("No customer linked with user: " + username));
+                .orElseGet(() -> autoCreateCustomer(user));
 
-        // Update only allowed fields
         existingCustomer.setName(customer.getName());
         existingCustomer.setEmail(customer.getEmail());
         existingCustomer.setPhone(customer.getPhone());
         existingCustomer.setAddress(customer.getAddress());
 
         customerService.save(existingCustomer);
-
         return "redirect:/customers/profile";
+    }
+
+    // ================== OPEN ACCOUNT ==================
+    @GetMapping("/customers/open-account")
+    public String showOpenAccountForm(Model model, Authentication authentication) {
+        String username = authentication.getName();
+        User user = userService.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+
+        Customer customer = customerService.findByUser(user)
+                .orElseGet(() -> autoCreateCustomer(user));
+
+        Account newAccount = new Account();
+        newAccount.setCustomer(customer);
+        newAccount.setBalance(BigDecimal.ZERO);
+        accountService.save(newAccount);
+
+        model.addAttribute("account", newAccount);
+        model.addAttribute("activePage", "open-account");
+        return "open_account";
+    }
+
+    @PostMapping("/customers/open-account")
+    public String openAccount(@ModelAttribute("account") Account account,
+                              Authentication authentication) {
+        String username = authentication.getName();
+        User user = userService.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+
+        Customer customer = customerService.findByUser(user)
+                .orElseGet(() -> autoCreateCustomer(user));
+
+        Account existingAccount = accountService.findById(account.getAccountId())
+                .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+
+        existingAccount.setCustomer(customer);
+        existingAccount.setAccountType(account.getAccountType());
+        existingAccount.setBalance(account.getBalance() != null ? account.getBalance() : BigDecimal.ZERO);
+
+        accountService.save(existingAccount);
+
+        return "redirect:/dashboard";
+    }
+
+    // ================== Helper ==================
+    private Customer autoCreateCustomer(User user) {
+        Customer customer = new Customer();
+        customer.setUser(user);
+        customer.setName(user.getUsername());
+        customer.setEmail("u" + user.getId() + "@auto.local"); // unique placeholder email
+        return customerService.save(customer);
     }
 }

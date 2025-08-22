@@ -9,6 +9,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 public class AuthController {
@@ -32,13 +34,37 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public String registerUser(@ModelAttribute("user") User user, Model model) {
+    public String registerUser(@ModelAttribute("user") User user,
+                               @RequestParam("confirmPassword") String confirmPassword,
+                               Model model,
+                               RedirectAttributes ra) {
+
+        // Username already exists
         if (authService.findByUsername(user.getUsername()).isPresent()) {
             model.addAttribute("error", "Username already exists");
             return "register";
         }
-        authService.saveUser(user);
-        return "redirect:/login";
+
+        // Password confirmation
+        if (!user.getPassword().equals(confirmPassword)) {
+            model.addAttribute("error", "Passwords do not match");
+            return "register";
+        }
+
+        // Save user
+        User saved = authService.saveUser(user);
+
+        // Flash username to success page
+        ra.addFlashAttribute("registeredUsername", saved.getUsername());
+        return "redirect:/register/success";
+    }
+
+    @GetMapping("/register/success")
+    public String registrationSuccess(Model model) {
+        if (!model.containsAttribute("registeredUsername")) {
+            model.addAttribute("registeredUsername", "your account");
+        }
+        return "register_success"; // templates/register_success.html
     }
 
     @GetMapping("/logout")

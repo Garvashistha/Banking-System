@@ -1,6 +1,7 @@
 package org.bank.service;
 
 import org.bank.entities.Account;
+import org.bank.entities.Customer;
 import org.bank.repository.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -42,5 +43,10 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public List<Account> findByCustomerId(Long customerId) {
         return accountRepository.findByCustomer_CustomerId(customerId);
+    }
+
+    @Override
+    public List<Account> findByCustomer(Customer customer) {
+        return accountRepository.findByCustomer(customer);
     }
 }

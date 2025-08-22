@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "accounts")
 @Data
@@ -25,5 +27,5 @@ public class Account {
     private String accountType;  // savings or current
 
     @Column(nullable = false)
-    private Double balance;
+    private BigDecimal balance;
 }

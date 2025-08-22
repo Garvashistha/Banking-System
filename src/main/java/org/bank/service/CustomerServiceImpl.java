@@ -3,7 +3,6 @@ package org.bank.service;
 import org.bank.entities.Customer;
 import org.bank.entities.User;
 import org.bank.repository.CustomerRepository;
-import org.bank.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,11 +12,12 @@ import java.util.Optional;
 @Service
 public class CustomerServiceImpl implements CustomerService {
 
-    @Autowired
-    private CustomerRepository customerRepository;
+    private final CustomerRepository customerRepository;
 
     @Autowired
-    private UserRepository userRepository;  // Needed to save User
+    public CustomerServiceImpl(CustomerRepository customerRepository) {
+        this.customerRepository = customerRepository;
+    }
 
     @Override
     public List<Customer> findAll() {
@@ -34,9 +34,10 @@ public class CustomerServiceImpl implements CustomerService {
         return customerRepository.save(customer);
     }
 
+    // ❌ Remove this or implement properly in UserService
     @Override
     public User save(User user) {
-        return userRepository.save(user);  // Implementation for save(User)
+        throw new UnsupportedOperationException("Use UserService to save a User");
     }
 
     @Override
@@ -46,11 +47,11 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public Optional<Customer> findByUser(User user) {
-        return customerRepository.findByUser(user); // Requires method in CustomerRepository
+        return customerRepository.findByUser(user);
     }
 
     @Override
     public Customer findByUserId(Long userId) {
-        return customerRepository.findByUserId(userId); // Requires method in CustomerRepository
+        return customerRepository.findByUser_Id(userId);
     }
 }
