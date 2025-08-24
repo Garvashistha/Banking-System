@@ -133,12 +133,12 @@ public class CustomerController {
         Customer customer = customerService.findByUser(user)
                 .orElseGet(() -> autoCreateCustomer(user));
 
-        Account newAccount = new Account();
-        newAccount.setCustomer(customer);
-        newAccount.setBalance(BigDecimal.ZERO);
-        accountService.save(newAccount);
+        // Prepare unsaved Account for the form (do not persist here!)
+        Account formAccount = new Account();
+        formAccount.setCustomer(customer);
+        formAccount.setBalance(BigDecimal.ZERO);
 
-        model.addAttribute("account", newAccount);
+        model.addAttribute("account", formAccount);
         model.addAttribute("activePage", "open-account");
         return "open_account";
     }
@@ -153,14 +153,16 @@ public class CustomerController {
         Customer customer = customerService.findByUser(user)
                 .orElseGet(() -> autoCreateCustomer(user));
 
-        Account existingAccount = accountService.findById(account.getAccountId())
-                .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+        // attach correct customer and validate
+        account.setCustomer(customer);
+        if (account.getAccountType() == null || account.getAccountType().isBlank()) {
+            throw new IllegalArgumentException("Account type is required");
+        }
+        if (account.getBalance() == null) {
+            account.setBalance(BigDecimal.ZERO);
+        }
 
-        existingAccount.setCustomer(customer);
-        existingAccount.setAccountType(account.getAccountType());
-        existingAccount.setBalance(account.getBalance() != null ? account.getBalance() : BigDecimal.ZERO);
-
-        accountService.save(existingAccount);
+        accountService.save(account);
 
         return "redirect:/dashboard";
     }

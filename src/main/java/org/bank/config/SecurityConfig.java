@@ -7,54 +7,53 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 
 @Configuration
 public class SecurityConfig {
 
     private final AuthService authService;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public SecurityConfig(AuthService authService) {
+    public SecurityConfig(AuthService authService, PasswordEncoder passwordEncoder) {
         this.authService = authService;
+        this.passwordEncoder = passwordEncoder;
     }
 
-    @Bean
-    public BCryptPasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
+    // DaoAuthenticationProvider using AuthService
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(authService); // AuthService must implement UserDetailsService
-        provider.setPasswordEncoder(passwordEncoder());
+        provider.setUserDetailsService(authService);
+        provider.setPasswordEncoder(passwordEncoder);
         return provider;
     }
 
+    // Authentication manager
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration cfg) throws Exception {
         return cfg.getAuthenticationManager();
     }
 
+    // Main security filter chain
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login", "/register", "/register/**", "/css/**", "/js/**", "/images/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/customers/**", "/accounts/**", "/transactions/**").hasRole("USER")
-                        .requestMatchers("/dashboard").authenticated()
+                        .requestMatchers("/customers/**", "/accounts/**", "/transactions/**", "/dashboard").hasRole("USER")
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
                         .loginPage("/login")
                         .loginProcessingUrl("/perform_login")
-                        .defaultSuccessUrl("/dashboard", true)
+                        .successHandler(customAuthenticationSuccessHandler())
                         .failureUrl("/login?error")
                         .permitAll()
                 )
@@ -62,8 +61,24 @@ public class SecurityConfig {
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("/login?logout")
                         .permitAll()
-                );
+                )
+                .authenticationProvider(authenticationProvider());
 
         return http.build();
+    }
+
+    // Role-based redirect
+    @Bean
+    public AuthenticationSuccessHandler customAuthenticationSuccessHandler() {
+        return (request, response, authentication) -> {
+            var authorities = authentication.getAuthorities();
+            String redirectUrl = "/dashboard"; // default USER redirect
+
+            if (authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+                redirectUrl = "/admin/dashboard";
+            }
+
+            response.sendRedirect(redirectUrl);
+        };
     }
 }
