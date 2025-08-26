@@ -25,74 +25,18 @@
             background: linear-gradient(180deg, #1e1e2f 0%, #14141f 100%);
             width: 260px; display: flex; flex-direction: column; padding: 20px 0;
         }
-        .sidebar .logo {
-            color: #66ccb7; font-weight: 700; font-size: 1.6rem;
-            text-align: center; margin-bottom: 2rem; letter-spacing: 1.2px;
-        }
-
+        .sidebar .logo { color: #66ccb7; font-weight: 700; font-size: 1.6rem;
+            text-align: center; margin-bottom: 2rem; letter-spacing: 1.2px; }
         .nav-links { flex-grow: 1; }
-        .nav-links .menu-item { display: flex; flex-direction: column; }
-
-        .nav-links a.main-link {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 15px 25px;
+        .nav-links a {
+            display: flex; align-items: center; padding: 15px 25px;
             color: #bbb; text-decoration: none; font-weight: 500; font-size: 1rem;
-            transition: all 0.3s ease;
-            border-left: 4px solid transparent; cursor: pointer;
+            transition: color 0.25s ease, background 0.3s ease;
+            border-left: 4px solid transparent;
         }
-        .nav-links a.main-link:hover,
-        .nav-links a.main-link.active-link {
-            background: #253244; color: #66ccb7; border-left-color: #66ccb7;
-            box-shadow: inset 2px 0 0 #66ccb7;
-        }
-
-        /* Arrow */
-        .arrow { transition: transform 0.3s ease; }
-        .menu-item.open .arrow { transform: rotate(90deg); }
-
-        /* Stylish Submenu */
-        .submenu {
-            max-height: 0; overflow: hidden;
-            background: #181a25;
-            transition: max-height 0.4s ease, padding 0.3s ease;
-            display: flex; flex-direction: column;
-            border-left: 2px solid #253244;
-        }
-        .menu-item.open .submenu {
-            max-height: 500px; /* allow dropdown expansion */
-            padding: 5px 0;
-        }
-        .submenu a {
-            padding: 12px 45px;
-            color: #aaa; text-decoration: none; font-size: 0.9rem;
-            transition: all 0.25s ease;
-            position: relative;
-        }
-        .submenu a::before {
-            content: "•";
-            position: absolute;
-            left: 25px; color: #444; font-size: 1.2rem;
-            transition: color 0.3s ease;
-        }
-        .submenu a:hover {
-            background: #2a3445; color: #66ccb7;
-        }
-        .submenu a:hover::before { color: #66ccb7; }
-        .submenu a.active-sub {
-            color: #66ccb7; font-weight: 600; background: #222c3a;
-            border-radius: 6px;
-        }
-
-        /* Logout button separate (red) */
-        .logout-link {
-            margin-top: auto;
-            padding: 15px 25px;
-            color: #f55; text-decoration: none; font-weight: 600; font-size: 1rem;
-            transition: background 0.3s ease, color 0.3s ease;
-            border-top: 1px solid #333;
-        }
-        .logout-link:hover {
-            background: #2a1e1e; color: #ff6b6b;
+        .nav-links a:hover,
+        .nav-links a.active-link {
+            background-color: #253244; color: #66ccb7; border-left-color: #66ccb7;
         }
 
         /* Main content */
@@ -159,7 +103,7 @@
         @media (max-width: 900px) {
             .container { flex-direction: column; }
             .sidebar { width: 100%; flex-direction: row; overflow-x: auto; }
-            .nav-links a.main-link { flex-direction: column; padding: 10px 15px; font-size: 0.85rem; }
+            .nav-links a { flex-direction: column; padding: 10px 15px; font-size: 0.85rem; }
             .main-content { padding: 15px 20px; }
         }
         @media (max-width: 480px) { .transaction-buttons { flex-direction: column; } }
@@ -171,44 +115,14 @@
     <nav class="sidebar">
         <div class="logo">BankSys</div>
         <div class="nav-links">
-            <!-- Dashboard -->
-            <div class="menu-item">
-                <a th:href="@{/dashboard}" class="main-link">Dashboard</a>
-            </div>
-
-            <!-- Accounts -->
-            <div class="menu-item">
-                <a class="main-link">Accounts <span class="arrow">▶</span></a>
-                <div class="submenu">
-                    <a th:href="@{/accounts/savings}">Savings Account</a>
-                    <a th:href="@{/accounts/current}">Current Account</a>
-                    <a th:href="@{/accounts/balance}">View Balance</a>
-                    <a th:href="@{/open_account}">Open Account</a>
-                </div>
-            </div>
-
-            <!-- Transactions -->
-            <div class="menu-item">
-                <a class="main-link">Transactions <span class="arrow">▶</span></a>
-                <div class="submenu">
-                    <a th:href="@{/transactions/deposit}">Deposit</a>
-                    <a th:href="@{/transactions/withdraw}">Withdraw</a>
-                    <a th:href="@{/transactions/transfer}">Transfer</a>
-                    <a th:href="@{/transactionhistory}">Transaction History</a>
-                </div>
-            </div>
-
-            <!-- Profile -->
-            <div class="menu-item">
-                <a class="main-link">Profile <span class="arrow">▶</span></a>
-                <div class="submenu">
-                    <a th:href="@{/customers/profile}">Update Profile</a>
-                </div>
-            </div>
+            <a th:href="@{/dashboard}" th:classappend="${activePage=='dashboard'} ? 'active-link'">Dashboard</a>
+            <a th:href="@{/customers/profile}" th:classappend="${activePage=='profile'} ? 'active-link'">Profile</a>
+            <a th:href="@{/customers}" th:classappend="${activePage=='customers'} ? 'active-link'">Customers</a>
+            <a th:href="@{/accounts}" th:classappend="${activePage=='accounts'} ? 'active-link'">Accounts</a>
+            <a th:href="@{/transactions}" th:classappend="${activePage=='transactions'} ? 'active-link'">Transactions</a>
+            <!-- ✅ New Open Account Link -->
+            <a th:href="@{/customers/open-account}" th:classappend="${activePage=='open-account'} ? 'active-link'">Open Account</a>
         </div>
-
-        <!-- Logout (separate, red) -->
-        <a th:href="@{/logout}" class="logout-link">Logout</a>
     </nav>
 
     <!-- Main -->
@@ -329,19 +243,8 @@
                 }
             });
         }
-
-        // Sidebar dropdown toggle
-        document.querySelectorAll('.menu-item .main-link').forEach(link => {
-            link.addEventListener('click', function(e) {
-                // only prevent default if link has submenu
-                if(this.nextElementSibling && this.nextElementSibling.classList.contains('submenu')) {
-                    e.preventDefault();
-                    let parent = this.parentElement;
-                    parent.classList.toggle('open');
-                }
-            });
-        });
     /*]]>*/
 </script>
+
 </body>
 </html>
