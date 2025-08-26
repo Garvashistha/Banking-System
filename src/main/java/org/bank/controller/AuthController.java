@@ -28,7 +28,7 @@ public class AuthController {
     // -----------------------------
     // Login page
     // -----------------------------
-    @GetMapping({"/","/login"})
+    @GetMapping({"/login"})
     public String showLoginForm() {
         return "login"; // templates/login.html
     }
