@@ -1,5 +1,6 @@
 package org.bank.service;
 
+import org.bank.entities.Customer;
 import org.bank.entities.Transaction;
 import org.bank.repository.TransactionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,5 +39,15 @@ public class TransactionService {
         return transactionRepository.findByAccountAccountIdOrderByTimestampDesc(accountId);
     }
 
+    public List<Transaction> findBySourceAccountId(Long accountId) {
+        return transactionRepository.findBySourceAccountAccountIdOrderByTimestampDesc(accountId);
+    }
 
+    public List<Transaction> findByDestinationAccountId(Long accountId) {
+        return transactionRepository.findByDestinationAccountAccountIdOrderByTimestampDesc(accountId);
+    }
+
+    public List<Transaction> findByCustomer(Customer customer) {
+        return transactionRepository.findByAccountCustomerOrderByTimestampDesc(customer);
+    }
 }
