@@ -183,7 +183,7 @@
                     <a th:href="@{/accounts/savings}">Savings Account</a>
                     <a th:href="@{/accounts/current}">Current Account</a>
                     <a th:href="@{/accounts/balance}">View Balance</a>
-                    <a th:href="@{/open-account}">Open Account</a>
+                    <a th:href="@{/accounts/open}">Open Account</a>
                 </div>
             </div>
 
@@ -230,8 +230,8 @@
         <!-- Quick Stats -->
         <section class="section" th:if="${customer != null}">
             <h2>Quick Stats</h2>
-            <p>Total Accounts: <span th:text="${totalAccounts != null ? totalAccounts : 0}">0</span></p>
-            <p>Total Balance: ₹<span th:text="${totalBalance != null ? totalBalance : 0}">0</span></p>
+            <p>Total Accounts: <span th:text="${totalAccounts}">0</span></p>
+            <p>Total Balance: ₹<span th:text="${totalBalance}">0</span></p>
         </section>
 
         <!-- Linked Accounts -->
@@ -247,9 +247,9 @@
                 </thead>
                 <tbody>
                 <tr th:each="account : ${accounts}">
-                    <td th:text="${account.accountId}">123456</td>
-                    <td th:text="${account.accountType}">Savings</td>
-                    <td th:text="${account.balance}">0</td>
+                    <td th:text="${account.accountId}"></td>
+                    <td th:text="${account.accountType}"></td>
+                    <td th:text="${account.balance}"></td>
                 </tr>
                 </tbody>
             </table>
@@ -280,9 +280,9 @@
                 </thead>
                 <tbody>
                 <tr th:each="trans : ${transactions}">
-                    <td th:text="${trans.timestamp}">Aug 01, 2025</td>
-                    <td th:text="${trans.transactionType}">Deposit</td>
-                    <td th:text="${trans.amount}">0</td>
+                    <td th:text="${trans.timestamp}"></td>
+                    <td th:text="${trans.transactionType}"></td>
+                    <td th:text="${trans.amount}"></td>
                     <td th:text="${trans.status}"
                         th:classappend="${trans.status != null ? (trans.status.equalsIgnoreCase('completed') ? 'status-completed' : (trans.status.equalsIgnoreCase('failed') ? 'status-failed' : 'status-pending')) : ''}">
                     </td>
