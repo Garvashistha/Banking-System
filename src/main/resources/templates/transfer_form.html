@@ -268,26 +268,38 @@
         </div>
 
         <section class="form-section">
-            <form th:action="@{/transactions/transfer}" method="post" th:object="${transaction}">
+            <!-- FIX: remove th:object and use explicit names to match @RequestParam -->
+            <form th:action="@{/transactions/transfer}" method="post">
                 <label for="fromAccount">From Account</label>
-                <select id="fromAccount" th:field="*{fromAccountId}" required>
+                <!-- FIX: name="fromAccountId" -->
+                <select id="fromAccount" name="fromAccountId" required>
                     <option value="" disabled selected>Select your account</option>
-                    <option th:each="acc : ${accounts}" th:value="${acc.accountId}" th:text="${acc.accountId + ' - ' + acc.accountType}"></option>
+                    <option th:each="acc : ${accounts}"
+                            th:value="${acc.accountId}"
+                            th:text="${acc.accountId + ' - ' + acc.accountType}">
+                    </option>
                 </select>
 
                 <label for="toAccount">To Account</label>
-                <select id="toAccount" th:field="*{toAccountId}" required>
+                <!-- FIX: name="toAccountId" -->
+                <select id="toAccount" name="toAccountId" required>
                     <option value="" disabled selected>Select destination account</option>
-                    <option th:each="acc : ${allAccounts}" th:value="${acc.accountId}" th:text="${acc.accountId + ' - ' + acc.accountType}"></option>
+                    <option th:each="acc : ${allAccounts}"
+                            th:value="${acc.accountId}"
+                            th:text="${acc.accountId + ' - ' + acc.accountType}">
+                    </option>
                 </select>
 
                 <label for="amount">Amount</label>
-                <input type="number" id="amount" th:field="*{amount}" placeholder="Enter amount" min="1" step="0.01" required />
+                <!-- FIX: name="amount" -->
+                <input type="number" id="amount" name="amount" placeholder="Enter amount" min="1" step="0.01" required />
 
                 <button type="submit">Transfer</button>
             </form>
         </section>
     </main>
 </div>
+
+
 </body>
 </html>
