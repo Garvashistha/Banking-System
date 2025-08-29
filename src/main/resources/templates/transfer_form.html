@@ -47,9 +47,15 @@
           flex-grow: 1;
         }
 
-        .nav-links a {
+        .menu-item {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .nav-links a.main-link {
           display: flex;
           align-items: center;
+          justify-content: space-between;
           padding: 15px 25px;
           color: #bbb;
           text-decoration: none;
@@ -57,21 +63,60 @@
           font-size: 1rem;
           transition: color 0.25s ease, background 0.3s ease;
           border-left: 4px solid transparent;
+          cursor: pointer;
         }
 
-        .nav-links a:hover,
-        .nav-links a.active {
+        .nav-links a.main-link:hover,
+        .nav-links a.main-link.active {
           background-color: #253244;
           color: #66ccb7;
           border-left-color: #66ccb7;
         }
 
-        .nav-links svg {
-          width: 20px;
-          height: 20px;
-          fill: currentColor;
-          margin-right: 15px;
-          flex-shrink: 0;
+        .submenu {
+          display: none;
+          flex-direction: column;
+          background-color: #181b24;
+        }
+
+        .submenu a {
+          padding: 12px 50px;
+          color: #aaa;
+          text-decoration: none;
+          font-size: 0.95rem;
+          transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        .submenu a:hover {
+          background-color: #253244;
+          color: #66ccb7;
+        }
+
+        .menu-item.open .submenu {
+          display: flex;
+        }
+
+        .arrow {
+          font-size: 0.8rem;
+          margin-left: auto;
+        }
+
+        /* Logout link */
+        .logout-link {
+          display: block;
+          margin: 20px;
+          padding: 12px 20px;
+          background-color: #a83232;
+          color: white;
+          text-align: center;
+          border-radius: 6px;
+          text-decoration: none;
+          font-weight: 600;
+          transition: background-color 0.3s ease;
+        }
+
+        .logout-link:hover {
+          background-color: #cc4444;
         }
 
         /* Main content */
@@ -232,26 +277,47 @@
 <body>
 <div class="container">
     <!-- Sidebar Navigation -->
-    <nav class="sidebar" aria-label="Primary">
+    <nav class="sidebar">
         <div class="logo">BankSys</div>
         <div class="nav-links">
-            <a th:href="@{/dashboard}" title="Dashboard">
-                <svg fill="currentColor" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zM3 21h8v-6H3v6zM13 21h8v-10h-8v10zM13 3v6h8V3h-8z"/></svg>
-                Dashboard
-            </a>
-            <a th:href="@{/customers}" title="Customers">
-                <svg fill="currentColor" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zM10 11c1.66 0 2.99-1.34 2.99-3S11.66 5 10 5 7 6.34 7 8s1.34 3 3 3zM10 13c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-                Customers
-            </a>
-            <a th:href="@{/accounts}" title="Accounts">
-                <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                Accounts
-            </a>
-            <a class="active" th:href="@{/transactions}" title="Transactions">
-                <svg fill="currentColor" viewBox="0 0 24 24"><path d="M17 1H7c-1.11 0-2 .9-2 2v18c0 1.1.89 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zM7 21V3h10v18H7zm5-14h2v5h-2z"/></svg>
-                Transactions
-            </a>
+            <!-- Dashboard -->
+            <div class="menu-item">
+                <a th:href="@{/dashboard}" class="main-link">Dashboard</a>
+            </div>
+
+            <!-- Accounts -->
+            <div class="menu-item">
+                <a href="#" class="main-link">Accounts <span class="arrow">▶</span></a>
+                <div class="submenu">
+                    <a th:href="@{/accounts/savings}">Savings Account</a>
+                    <a th:href="@{/accounts/current}">Current Account</a>
+                    <a th:href="@{/accounts/balance}">View Balance</a>
+                    <a th:href="@{/accounts/open}">Open Account</a>
+                </div>
+            </div>
+
+            <!-- Transactions -->
+            <div class="menu-item">
+                <a href="#" class="main-link">Transactions <span class="arrow">▶</span></a>
+                <div class="submenu">
+                    <a th:href="@{/transactions/deposit}">Deposit</a>
+                    <a th:href="@{/transactions/withdraw}">Withdraw</a>
+                    <a th:href="@{/transactions/transfer}" class="active">Transfer</a>
+                    <a th:href="@{/transactions/transactionhistory}">Transaction History</a>
+                </div>
+            </div>
+
+            <!-- Profile -->
+            <div class="menu-item">
+                <a href="#" class="main-link">Profile <span class="arrow">▶</span></a>
+                <div class="submenu">
+                    <a th:href="@{/customers/profile}">Update Profile</a>
+                </div>
+            </div>
         </div>
+
+        <!-- Logout (separate, red) -->
+        <a th:href="@{/logout}" class="logout-link">Logout</a>
     </nav>
 
     <!-- Main Content -->
@@ -259,7 +325,9 @@
         <div class="top-bar">
             <h1>Transfer Money</h1>
             <div class="user-profile" tabindex="0" aria-label="User profile menu">
-                <img src="https://ui-avatars.com/api/?name=" th:alt="${customer.name}" th:src="'https://ui-avatars.com/api/?name=' + ${customer.name}" alt="User Avatar" />
+                <img src="https://ui-avatars.com/api/?name="
+                     th:src="'https://ui-avatars.com/api/?name=' + ${user.username}"
+                     alt="User Avatar" />
                 <div class="dropdown-menu" role="menu" aria-hidden="true">
                     <a th:href="@{/profile}">Profile</a>
                     <a th:href="@{/logout}">Logout</a>
@@ -268,38 +336,45 @@
         </div>
 
         <section class="form-section">
-            <!-- FIX: remove th:object and use explicit names to match @RequestParam -->
             <form th:action="@{/transactions/transfer}" method="post">
-                <label for="fromAccount">From Account</label>
-                <!-- FIX: name="fromAccountId" -->
+                <!-- Source Account -->
+                <label for="fromAccount">From Account:</label>
                 <select id="fromAccount" name="fromAccountId" required>
-                    <option value="" disabled selected>Select your account</option>
+                    <option value="">-- Select Source Account --</option>
                     <option th:each="acc : ${accounts}"
                             th:value="${acc.accountId}"
-                            th:text="${acc.accountId + ' - ' + acc.accountType}">
+                            th:text="${acc.accountType + ' - ' + acc.accountId + ' (Balance: ' + acc.balance + ')'}">
                     </option>
                 </select>
 
-                <label for="toAccount">To Account</label>
-                <!-- FIX: name="toAccountId" -->
+                <!-- Destination Account -->
+                <label for="toAccount">To Account:</label>
                 <select id="toAccount" name="toAccountId" required>
-                    <option value="" disabled selected>Select destination account</option>
+                    <option value="">-- Select Destination Account --</option>
                     <option th:each="acc : ${allAccounts}"
                             th:value="${acc.accountId}"
-                            th:text="${acc.accountId + ' - ' + acc.accountType}">
+                            th:text="${acc.accountType + ' - ' + acc.accountId}">
                     </option>
                 </select>
 
-                <label for="amount">Amount</label>
-                <!-- FIX: name="amount" -->
-                <input type="number" id="amount" name="amount" placeholder="Enter amount" min="1" step="0.01" required />
+                <!-- Amount -->
+                <label for="amount">Amount:</label>
+                <input type="number" id="amount" step="0.01" name="amount" required />
 
                 <button type="submit">Transfer</button>
             </form>
         </section>
     </main>
 </div>
-
-
+<script>
+    document.querySelectorAll('.menu-item .main-link').forEach(link => {
+      link.addEventListener('click', function(e) {
+        if(this.nextElementSibling && this.nextElementSibling.classList.contains('submenu')) {
+          e.preventDefault();
+          this.parentElement.classList.toggle('open');
+        }
+      });
+    });
+</script>
 </body>
 </html>

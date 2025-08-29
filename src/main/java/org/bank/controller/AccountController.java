@@ -35,42 +35,38 @@ public class AccountController {
     // ================== OPEN ACCOUNT ==================
     @GetMapping("/open")
     public String showOpenAccountForm(Model model, Authentication authentication) {
-        String username = authentication.getName();
-        User user = userService.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+        Customer customer = getCustomerFromAuth(authentication);
 
-        Customer customer = customerService.findByUser(user)
-                .orElseThrow(() -> new IllegalArgumentException("Customer not found for user: " + username));
-
+        // prepare empty account for form binding (NOT saved yet)
         Account formAccount = new Account();
-        formAccount.setCustomer(customer);
         formAccount.setBalance(BigDecimal.ZERO);
 
         model.addAttribute("account", formAccount);
-        model.addAttribute("activePage", "open_account");
+        model.addAttribute("activePage", "open-account");
         return "open_account"; // templates/open_account.html
     }
 
     @PostMapping("/open")
     public String openAccount(@ModelAttribute("account") Account account,
                               Authentication authentication) {
-        String username = authentication.getName();
-        User user = userService.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+        Customer customer = getCustomerFromAuth(authentication);
 
-        Customer customer = customerService.findByUser(user)
-                .orElseThrow(() -> new IllegalArgumentException("Customer not found for user: " + username));
-
-        account.setCustomer(customer);
+        // Always create a new account to avoid binding issues with ID
+        Account toSave = new Account();
+        toSave.setCustomer(customer);
 
         if (account.getAccountType() == null || account.getAccountType().isBlank()) {
             throw new IllegalArgumentException("Account type is required");
         }
+        toSave.setAccountType(account.getAccountType());
+
         if (account.getBalance() == null) {
-            account.setBalance(BigDecimal.ZERO);
+            toSave.setBalance(BigDecimal.ZERO);
+        } else {
+            toSave.setBalance(account.getBalance());
         }
 
-        accountService.save(account);
+        accountService.save(toSave);
         return "redirect:/dashboard";
     }
 
@@ -80,7 +76,6 @@ public class AccountController {
         Customer customer = getCustomerFromAuth(authentication);
         List<Account> allAccounts = accountService.findByCustomer(customer);
 
-        // filter in memory instead of repository
         List<Account> savingsAccounts = allAccounts.stream()
                 .filter(a -> "SAVINGS".equalsIgnoreCase(a.getAccountType()))
                 .toList();
@@ -89,7 +84,6 @@ public class AccountController {
         model.addAttribute("activePage", "savings");
         return "savings_account";
     }
-
 
     // ================== CURRENT ACCOUNT ==================
     @GetMapping("/current")

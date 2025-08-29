@@ -260,7 +260,7 @@
         <div class="top-bar">
             <h1>Deposit Money</h1>
             <div class="user-profile" tabindex="0" aria-label="User profile menu">
-                <img src="https://ui-avatars.com/api/?name=" th:alt="${customer.name}" th:src="'https://ui-avatars.com/api/?name=' + ${customer.name}" alt="User Avatar" />
+                <img src="https://ui-avatars.com/api/?name="th:src="'https://ui-avatars.com/api/?name=' " alt="User Avatar" />
                 <div class="dropdown-menu" role="menu" aria-hidden="true">
                     <a th:href="@{/profile}">Profile</a>
                     <a th:href="@{/logout}">Logout</a>
@@ -269,24 +269,22 @@
         </div>
 
         <section class="form-section">
-            <!-- FIX: remove th:object and use explicit names to match @RequestParam -->
             <form th:action="@{/transactions/deposit}" method="post">
-                <label for="account">Select Account</label>
-                <!-- FIX: name="accountId" so controller receives @RequestParam Long accountId -->
-                <select id="account" name="accountId" required>
-                    <option value="" disabled selected>Select your account</option>
+                <label for="accountId">Select Account:</label>
+                <select id="accountId" name="accountId" required>
+                    <option value="">-- Select Account --</option>
                     <option th:each="acc : ${accounts}"
                             th:value="${acc.accountId}"
-                            th:text="${acc.accountId + ' - ' + acc.accountType}">
+                            th:text="${acc.accountType + ' - ' + acc.accountId + ' (Balance: ' + acc.balance + ')'}">
                     </option>
                 </select>
 
-                <label for="amount">Amount</label>
-                <!-- FIX: name="amount" so controller receives @RequestParam BigDecimal amount -->
-                <input type="number" id="amount" name="amount" placeholder="Enter amount" min="1" step="0.01" required />
+                <label for="amount">Amount:</label>
+                <input type="number" id="amount" name="amount" step="0.01" required />
 
                 <button type="submit">Deposit</button>
             </form>
+
         </section>
     </main>
 </div>

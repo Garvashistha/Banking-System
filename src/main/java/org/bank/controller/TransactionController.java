@@ -15,7 +15,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Controller
@@ -24,39 +24,55 @@ public class TransactionController {
 
     private final TransactionService transactionService;
     private final AuthService authService;
-    private final CustomerService customerService;
     private final AccountService accountService;
+    private final CustomerService customerService;
 
     @Autowired
     public TransactionController(TransactionService transactionService,
                                  AuthService authService,
-                                 CustomerService customerService,
-                                 AccountService accountService) {
+                                 AccountService accountService,
+                                 CustomerService customerService) {
         this.transactionService = transactionService;
         this.authService = authService;
-        this.customerService = customerService;
         this.accountService = accountService;
+        this.customerService = customerService;
     }
 
     // ================== TRANSACTION HISTORY ==================
-    @GetMapping
+    @GetMapping("/transactionhistory")
     public String listTransactions(Model model, Authentication authentication) {
         User user = getUser(authentication);
         if (user == null) return "redirect:/login";
 
-        Customer customer = customerService.findByUser(user).orElse(null);
-        List<Transaction> transactions = (customer != null)
-                ? transactionService.findByCustomer(customer)
-                : List.of();
+        Customer customer = customerService.findByUserId(user.getId());
+        if (customer == null) return "redirect:/login";
+
+        List<Account> accounts = accountService.findByCustomerId(customer.getCustomerId());
+        List<Transaction> transactions = new ArrayList<>();
+
+        for (Account account : accounts) {
+            transactions.addAll(transactionService.findByAccountId(account.getAccountId()));
+        }
 
         model.addAttribute("transactions", transactions);
+        model.addAttribute("user", user);
         return "transactionhistory";
     }
 
+
     // ================== DEPOSIT ==================
     @GetMapping("/deposit")
-    public String showDepositForm(Model model) {
-        model.addAttribute("transaction", new Transaction());
+    public String showDepositForm(Model model, Authentication authentication) {
+        User user = getUser(authentication);
+        if (user == null) return "redirect:/login";
+
+        Customer customer = customerService.findByUserId(user.getId());
+        if (customer == null) return "redirect:/login";
+
+        List<Account> accounts = accountService.findByCustomerId(customer.getCustomerId());
+        model.addAttribute("accounts", accounts);
+        model.addAttribute("user", user); // 🔥 Added
+
         return "deposit_form";
     }
 
@@ -67,30 +83,29 @@ public class TransactionController {
         User user = getUser(authentication);
         if (user == null) return "redirect:/login";
 
-        Account account = accountService.findById(accountId).orElse(null);
-        if (account == null) return "redirect:/transactions";
+        try {
+            accountService.deposit(accountId, amount);
+        } catch (RuntimeException e) {
+            return "redirect:/transactions?error=" + e.getMessage();
+        }
 
-        // update balance
-        account.setBalance(account.getBalance().add(amount));
-        accountService.save(account);
-
-        // save transaction
-        Transaction transaction = new Transaction();
-        transaction.setAccount(account);
-        transaction.setTransactionType("deposit");
-        transaction.setAmount(amount);
-        transaction.setTimestamp(LocalDateTime.now());
-        transaction.setStatus("SUCCESS");
-        transactionService.save(transaction);
-
-        return "redirect:/transactions";
+        return "redirect:/dashboard";
     }
 
     // ================== WITHDRAW ==================
     @GetMapping("/withdraw")
-    public String showWithdrawForm(Model model) {
-        model.addAttribute("transaction", new Transaction());
-        return "withdraw_form";  // ✅ filename fix
+    public String showWithdrawForm(Model model, Authentication authentication) {
+        User user = getUser(authentication);
+        if (user == null) return "redirect:/login";
+
+        Customer customer = customerService.findByUserId(user.getId());
+        if (customer == null) return "redirect:/login";
+
+        List<Account> accounts = accountService.findByCustomerId(customer.getCustomerId());
+        model.addAttribute("accounts", accounts);
+        model.addAttribute("user", user); // 🔥 Added
+
+        return "withdraw_form";
     }
 
     @PostMapping("/withdraw")
@@ -100,32 +115,34 @@ public class TransactionController {
         User user = getUser(authentication);
         if (user == null) return "redirect:/login";
 
-        Account account = accountService.findById(accountId).orElse(null);
-        if (account == null) return "redirect:/transactions";
-
-        if (account.getBalance().compareTo(amount) < 0) {
-            // insufficient funds
-            return "redirect:/transactions?error=insufficient";
+        try {
+            accountService.withdraw(accountId, amount);
+        } catch (RuntimeException e) {
+            return "redirect:/dashboard?error=" + e.getMessage();
         }
 
-        account.setBalance(account.getBalance().subtract(amount));
-        accountService.save(account);
-
-        Transaction transaction = new Transaction();
-        transaction.setAccount(account);
-        transaction.setTransactionType("withdraw");
-        transaction.setAmount(amount);
-        transaction.setTimestamp(LocalDateTime.now());
-        transaction.setStatus("SUCCESS");
-        transactionService.save(transaction);
-
-        return "redirect:/transactions";
+        return "redirect:/dashboard";
     }
 
     // ================== TRANSFER ==================
     @GetMapping("/transfer")
-    public String showTransferForm(Model model) {
-        model.addAttribute("transaction", new Transaction());
+    public String showTransferForm(Model model, Authentication authentication) {
+        User user = getUser(authentication);
+        if (user == null) return "redirect:/login";
+
+        Customer customer = customerService.findByUserId(user.getId());
+        if (customer == null) return "redirect:/login";
+
+        // Source accounts: only for the logged-in customer
+        List<Account> accounts = accountService.findByCustomerId(customer.getCustomerId());
+
+        // Destination accounts: all accounts in the system
+        List<Account> allAccounts = accountService.findAll();
+
+        model.addAttribute("accounts", accounts);
+        model.addAttribute("allAccounts", allAccounts);
+        model.addAttribute("user", user); // 🔥 Added
+
         return "transfer_form";
     }
 
@@ -136,35 +153,17 @@ public class TransactionController {
                                   Authentication authentication) {
         User user = getUser(authentication);
         if (user == null) return "redirect:/login";
-
-        Account fromAccount = accountService.findById(fromAccountId).orElse(null);
-        Account toAccount = accountService.findById(toAccountId).orElse(null);
-
-        if (fromAccount == null || toAccount == null) {
-            return "redirect:/transactions";
+        if (fromAccountId.equals(toAccountId)) {
+            return "redirect:/transactions/transfer?error=Cannot+transfer+to+the+same+account";
         }
 
-        if (fromAccount.getBalance().compareTo(amount) < 0) {
-            return "redirect:/transactions?error=insufficient";
+        try {
+            accountService.transfer(fromAccountId, toAccountId, amount);
+        } catch (RuntimeException e) {
+            return "redirect:/dashboard?error=" + e.getMessage();
         }
 
-        // update balances
-        fromAccount.setBalance(fromAccount.getBalance().subtract(amount));
-        toAccount.setBalance(toAccount.getBalance().add(amount));
-        accountService.save(fromAccount);
-        accountService.save(toAccount);
-
-        // save transaction
-        Transaction transaction = new Transaction();
-        transaction.setSourceAccount(fromAccount);
-        transaction.setDestinationAccount(toAccount);
-        transaction.setTransactionType("transfer");
-        transaction.setAmount(amount);
-        transaction.setTimestamp(LocalDateTime.now());
-        transaction.setStatus("SUCCESS");
-        transactionService.save(transaction);
-
-        return "redirect:/transactions";
+        return "redirect:/dashboard";
     }
 
     // ================== HELPER ==================
