@@ -42,7 +42,7 @@ public class AccountController {
         formAccount.setBalance(BigDecimal.ZERO);
 
         model.addAttribute("account", formAccount);
-        model.addAttribute("activePage", "open-account");
+        model.addAttribute("activePage", "open_account");
         return "open_account"; // templates/open_account.html
     }
 
