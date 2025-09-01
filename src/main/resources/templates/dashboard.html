@@ -306,7 +306,7 @@
         let labels = [];
         let data = [];
         /* build arrays with th:each */
-        /*[# th:each="a : ${accounts}"]*/
+        /*[# th:if="${accounts != null}" th:each="a : ${accounts}"]*/
             labels.push("Acc-" + /*[[${a.accountId}]]*/"");
             data.push(/*[[${a.balance}]]*/0);
         /*[/]*/
