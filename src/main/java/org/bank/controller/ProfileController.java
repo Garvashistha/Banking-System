@@ -11,6 +11,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 public class ProfileController {
@@ -42,7 +43,7 @@ public class ProfileController {
         return "view_profile";
     }
 
-    // ================== UPDATE PROFILE ==================
+    // ================== SHOW UPDATE PROFILE FORM ==================
     @GetMapping("/profile/update")
     public String showUpdateForm(Model model, Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -57,14 +58,18 @@ public class ProfileController {
 
         Customer customer = customerService.findByUserId(user.getId());
         model.addAttribute("customer", customer);
+
         return "updateprofile";
     }
 
+    // ================== UPDATE PROFILE ==================
     @PostMapping("/profile/update")
     public String updateProfile(@RequestParam String name,
                                 @RequestParam String address,
                                 @RequestParam String phone,
-                                Authentication authentication) {
+                                @RequestParam String email,
+                                Authentication authentication,
+                                RedirectAttributes redirectAttributes) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return "redirect:/login";
         }
@@ -80,9 +85,13 @@ public class ProfileController {
             customer.setName(name);
             customer.setAddress(address);
             customer.setPhone(phone);
+            customer.setEmail(email);
             customerService.save(customer);
         }
 
-        return "redirect:/updateprofile";
+        // Add success flash attribute for popup
+        redirectAttributes.addFlashAttribute("success", "Profile updated successfully!");
+
+        return "redirect:/profile/update";
     }
 }
