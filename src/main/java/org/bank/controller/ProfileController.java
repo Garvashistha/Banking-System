@@ -90,7 +90,8 @@ public class ProfileController {
         }
 
         // Add success flash attribute for popup
-        redirectAttributes.addFlashAttribute("success", "Profile updated successfully!");
+        redirectAttributes.addAttribute("success", "true");
+
 
         return "redirect:/profile/update";
     }
