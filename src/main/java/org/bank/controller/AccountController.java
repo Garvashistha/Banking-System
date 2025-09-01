@@ -67,7 +67,7 @@ public class AccountController {
         }
 
         accountService.save(toSave);
-        return "redirect:/dashboard";
+        return "open_account";
     }
 
     // ================== SAVINGS ACCOUNT ==================

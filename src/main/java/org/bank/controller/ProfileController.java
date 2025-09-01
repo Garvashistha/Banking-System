@@ -39,7 +39,7 @@ public class ProfileController {
 
         Customer customer = customerService.findByUserId(user.getId());
         model.addAttribute("customer", customer);
-        return "profile";
+        return "view_profile";
     }
 
     // ================== UPDATE PROFILE ==================
@@ -83,6 +83,6 @@ public class ProfileController {
             customerService.save(customer);
         }
 
-        return "redirect:/profile";
+        return "redirect:/updateprofile";
     }
 }
