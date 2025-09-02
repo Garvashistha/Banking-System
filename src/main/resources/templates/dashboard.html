@@ -202,7 +202,7 @@
             <div class="menu-item">
                 <a class="main-link">Profile <span class="arrow">▶</span></a>
                 <div class="submenu">
-                    <a th:href="@{/customers/profile}">Update Profile</a>
+                    <a th:href="@{/update/profile}">Update Profile</a>
                 </div>
             </div>
         </div>
@@ -221,7 +221,7 @@
                 <img th:alt="${customer != null ? customer.name : user.username}"
                      th:src="${customer != null ? 'https://ui-avatars.com/api/?name=' + customer.name : 'https://ui-avatars.com/api/?name=' + user.username}" />
                 <div class="dropdown-menu">
-                    <a th:href="@{/customers/profile}">Profile</a>
+                    <a th:href="@{/update/profile}">Profile</a>
                     <a th:href="@{/logout}">Logout</a>
                 </div>
             </div>
