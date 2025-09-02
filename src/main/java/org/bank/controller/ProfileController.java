@@ -58,6 +58,7 @@ public class ProfileController {
 
         Customer customer = customerService.findByUserId(user.getId());
         model.addAttribute("customer", customer);
+        model.addAttribute("user", user);
 
         return "updateprofile";
     }
