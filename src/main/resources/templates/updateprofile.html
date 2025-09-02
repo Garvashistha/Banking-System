@@ -260,7 +260,7 @@
     // Sidebar dropdown toggle
     document.querySelectorAll('.menu-item .main-link').forEach(link => {
         link.addEventListener('click', function(e) {
-            if(this.nextElementSibling && this.nextElementSibling.classList.contains('submenu')) {
+            if (this.nextElementSibling && this.nextElementSibling.classList.contains('submenu')) {
                 e.preventDefault();
                 let parent = this.parentElement;
                 parent.classList.toggle('open');
@@ -269,7 +269,7 @@
     });
 
     // Show popup if flash attribute "success" exists
-    /*[[${success != null}]]*/ if (true) {
+    if ([[${success} ?: false]]) {
         const popup = document.getElementById('successPopup');
         if (popup) {
             popup.style.display = 'block';
@@ -278,6 +278,7 @@
     }
     /*]]>*/
 </script>
+
 
 </body>
 </html>
