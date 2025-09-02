@@ -210,16 +210,21 @@
         <!-- Top Bar -->
         <div class="top-bar">
             <h1>Update Profile</h1>
-            <p th:text="'WELCOME, ' + ${customer != null ? customer.name : 'User'}">WELCOME, User</p>
+
+            <p th:text="${'WELCOME, ' + (customer != null ? customer.name : 'User')}">WELCOME, User</p>
+
             <div class="user-profile" tabindex="0">
-                <img th:alt="${customer != null ? customer.name : user.username}"
-                     th:src="${customer != null ? 'https://ui-avatars.com/api/?name=' + customer.name : 'https://ui-avatars.com/api/?name=' + user.username}" />
+                <img
+                        th:alt="${customer != null ? customer.name : user.username}"
+                        th:src="@{|https://ui-avatars.com/api/?name=${customer != null ? customer.name : user.username}|}" />
+
                 <div class="dropdown-menu">
                     <a th:href="@{/profile}">View Profile</a>
                     <a th:href="@{/logout}">Logout</a>
                 </div>
             </div>
         </div>
+
 
         <!-- Update Profile Form -->
         <div class="form-container">
