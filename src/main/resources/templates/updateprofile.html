@@ -207,6 +207,9 @@
 
     <!-- Main -->
     <main class="main-content">
+        <p th:text="'User: ' + ${user.username}"></p>
+        <p th:text="'Customer: ' + ${customer.name}"></p>
+
         <!-- Top Bar -->
         <div class="top-bar">
             <h1>Update Profile</h1>
@@ -257,28 +260,28 @@
 
 <script th:inline="javascript">
     /*<![CDATA[*/
-    // Sidebar dropdown toggle
-    document.querySelectorAll('.menu-item .main-link').forEach(link => {
-        link.addEventListener('click', function(e) {
-            if (this.nextElementSibling && this.nextElementSibling.classList.contains('submenu')) {
-                e.preventDefault();
-                let parent = this.parentElement;
-                parent.classList.toggle('open');
-            }
+        // Sidebar dropdown toggle
+        document.querySelectorAll('.menu-item .main-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (this.nextElementSibling && this.nextElementSibling.classList.contains('submenu')) {
+                    e.preventDefault();
+                    let parent = this.parentElement;
+                    parent.classList.toggle('open');
+                }
+            });
         });
-    });
 
-    // Show popup if flash attribute "success" exists
-    if ([[${success} ?: false]]) {
-        const popup = document.getElementById('successPopup');
-        if (popup) {
-            popup.style.display = 'block';
-            setTimeout(() => { popup.style.display = 'none'; }, 3000);
+        // Show popup if flash attribute "success" exists
+        var isSuccess = /*[[${success}]]*/ false;
+        if (isSuccess) {
+            const popup = document.getElementById('successPopup');
+            if (popup) {
+                popup.style.display = 'block';
+                setTimeout(() => { popup.style.display = 'none'; }, 3000);
+            }
         }
-    }
     /*]]>*/
 </script>
-
 
 </body>
 </html>
