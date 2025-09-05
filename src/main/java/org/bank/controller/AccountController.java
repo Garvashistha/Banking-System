@@ -82,6 +82,9 @@ public class AccountController {
 
         model.addAttribute("accounts", savingsAccounts);
         model.addAttribute("activePage", "savings");
+        model.addAttribute("customer", customer);
+        model.addAttribute("user", customer.getUser());
+
         return "savings_account";
     }
 
@@ -97,6 +100,9 @@ public class AccountController {
 
         model.addAttribute("accounts", currentAccounts);
         model.addAttribute("activePage", "current");
+        model.addAttribute("customer", customer);
+        model.addAttribute("user", customer.getUser());
+
         return "current_account";
     }
 
@@ -107,6 +113,9 @@ public class AccountController {
         List<Account> accounts = accountService.findByCustomer(customer);
         model.addAttribute("accounts", accounts);
         model.addAttribute("activePage", "balance");
+        model.addAttribute("customer", customer);
+        model.addAttribute("user", customer.getUser());
+
         return "view_balance"; // templates/view_balance.html
     }
 
