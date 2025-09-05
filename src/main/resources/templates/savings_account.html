@@ -10,13 +10,11 @@
 
     <style>
         /* --- Copy-paste all styles from dashboard.html --- */
-        /* Reset & base */
         *, *::before, *::after { box-sizing: border-box; }
         body, html { margin: 0; height: 100%; font-family: 'Poppins', sans-serif;
             background: #121212; color: #e0e0e0; }
         .container { display: flex; height: 100vh; overflow: hidden; }
 
-        /* Sidebar */
         .sidebar { background: linear-gradient(180deg, #1e1e2f 0%, #14141f 100%);
             width: 260px; display: flex; flex-direction: column; padding: 20px 0; }
         .sidebar .logo { color: #66ccb7; font-weight: 700; font-size: 1.6rem; text-align: center;
@@ -53,7 +51,6 @@
             font-weight: 600; transition: background 0.3s ease, color 0.3s ease; border-top: 1px solid #333; }
         .logout-link:hover { background: #2a1e1e; color: #ff6b6b; }
 
-        /* Main content */
         .main-content { flex-grow: 1; background: #181818; display: flex; flex-direction: column;
             padding: 20px 30px; overflow-y: auto; }
         .top-bar { display: flex; justify-content: space-between; align-items: center;
@@ -86,7 +83,7 @@
 </head>
 <body>
 <div class="container">
-    <!-- Sidebar (same as dashboard) -->
+    <!-- Sidebar -->
     <nav class="sidebar">
         <div class="logo">BankSys</div>
         <div class="nav-links">
@@ -135,48 +132,24 @@
 
         <!-- Savings Account Info -->
         <section class="section">
-            <h2>Your Savings Account</h2>
-            <table class="accounts-list" th:if="${savingsAccount != null}">
+            <h2>Your Savings Accounts</h2>
+            <table class="accounts-list" th:if="${accounts != null and accounts.size() > 0}">
                 <thead>
                 <tr>
                     <th>Account Number</th>
+                    <th>Type</th>
                     <th>Balance</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr>
-                    <td th:text="${savingsAccount.accountId}"></td>
-                    <td th:text="${savingsAccount.balance}"></td>
+                <tr th:each="account : ${accounts}">
+                    <td th:text="${account.accountId}"></td>
+                    <td th:text="${account.accountType}"></td>
+                    <td th:text="${account.balance}"></td>
                 </tr>
                 </tbody>
             </table>
-            <p th:if="${savingsAccount == null}">No Savings Account found.</p>
-        </section>
-
-        <!-- Transactions -->
-        <section class="section">
-            <h2>Savings Account Transactions</h2>
-            <table class="transactions-table" th:if="${transactions != null && transactions.size() > 0}">
-                <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Type</th>
-                    <th>Amount</th>
-                    <th>Status</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="trans : ${transactions}">
-                    <td th:text="${trans.timestamp}"></td>
-                    <td th:text="${trans.transactionType}"></td>
-                    <td th:text="${trans.amount}"></td>
-                    <td th:text="${trans.status}"
-                        th:classappend="${trans.status.equalsIgnoreCase('completed') ? 'status-completed' : (trans.status.equalsIgnoreCase('failed') ? 'status-failed' : 'status-pending')}">
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-            <p th:if="${transactions == null || transactions.size() == 0}">No transactions yet.</p>
+            <p th:if="${accounts == null or accounts.size() == 0}">No Savings Account found.</p>
         </section>
     </main>
 </div>

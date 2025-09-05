@@ -10,7 +10,6 @@
 
     <style>
         /* --- Copy-paste all styles from dashboard.html --- */
-        /* Reset & base */
         *, *::before, *::after { box-sizing: border-box; }
         body, html { margin: 0; height: 100%; font-family: 'Poppins', sans-serif;
             background: #121212; color: #e0e0e0; }
@@ -86,7 +85,7 @@
 </head>
 <body>
 <div class="container">
-    <!-- Sidebar (same as dashboard) -->
+    <!-- Sidebar -->
     <nav class="sidebar">
         <div class="logo">BankSys</div>
         <div class="nav-links">
@@ -122,7 +121,7 @@
         <!-- Top Bar -->
         <div class="top-bar">
             <h1>Current Account</h1>
-            <p th:text="'WELCOME, ' + ${customer != null ? customer.name : user.username}">WELCOME, User</p>
+            <p th:text="'WELCOME, ' + (${customer != null} ? ${customer.name} : ${user.username})">WELCOME, User</p>
             <div class="user-profile">
                 <img th:alt="${customer != null ? customer.name : user.username}"
                      th:src="${customer != null ? 'https://ui-avatars.com/api/?name=' + customer.name : 'https://ui-avatars.com/api/?name=' + user.username}" />
@@ -135,8 +134,8 @@
 
         <!-- Current Account Info -->
         <section class="section">
-            <h2>Your Current Account</h2>
-            <table class="accounts-list" th:if="${currentAccount != null}">
+            <h2>Your Current Accounts</h2>
+            <table class="accounts-list" th:if="${accounts != null and accounts.size() > 0}">
                 <thead>
                 <tr>
                     <th>Account Number</th>
@@ -144,19 +143,19 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr>
-                    <td th:text="${currentAccount.accountId}"></td>
-                    <td th:text="${currentAccount.balance}"></td>
+                <tr th:each="acc : ${accounts}">
+                    <td th:text="${acc.accountId}"></td>
+                    <td th:text="${acc.balance}"></td>
                 </tr>
                 </tbody>
             </table>
-            <p th:if="${currentAccount == null}">No Current Account found.</p>
+            <p th:if="${accounts == null or accounts.size() == 0}">No Current Account found.</p>
         </section>
 
-        <!-- Transactions -->
+        <!-- Transactions (optional, if you later add to model) -->
         <section class="section">
             <h2>Current Account Transactions</h2>
-            <table class="transactions-table" th:if="${transactions != null && transactions.size() > 0}">
+            <table class="transactions-table" th:if="${transactions != null and transactions.size() > 0}">
                 <thead>
                 <tr>
                     <th>Date</th>
@@ -176,7 +175,7 @@
                 </tr>
                 </tbody>
             </table>
-            <p th:if="${transactions == null || transactions.size() == 0}">No transactions yet.</p>
+            <p th:if="${transactions == null or transactions.size() == 0}">No transactions yet.</p>
         </section>
     </main>
 </div>
