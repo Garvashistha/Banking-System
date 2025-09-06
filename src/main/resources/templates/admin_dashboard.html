@@ -337,7 +337,8 @@
                 <tr th:each="account : ${accounts}">
                     <td th:text="${account.accountId}">123456</td>
                     <td th:text="${account.accountType}">Savings</td>
-                    <td th:text="${#numbers.formatDecimal(account.balance, 2, 'COMMA', 'POINT')}">$1,000.00</td>
+                    <span th:text="${#strings.format('%.2f', account.balance)}"></span>
+
                     <td>
                         <button class="btn btn-edit" th:onclick="'location.href=\'/accounts/edit/'+${account.accountId}+'\';'">Edit</button>
                         <button class="btn btn-delete" th:onclick="'location.href=\'/accounts/delete/'+${account.accountId}+'\';'">Delete</button>
