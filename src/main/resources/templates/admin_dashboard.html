@@ -337,7 +337,7 @@
                 <tr th:each="account : ${accounts}">
                     <td th:text="${account.accountId}">123456</td>
                     <td th:text="${account.accountType}">Savings</td>
-                    <span th:text="${#strings.format('%.2f', account.balance)}"></span>
+                    <span th:text="${account.balance == null ? '0.00' : account.balance}"></span>
 
                     <td>
                         <button class="btn btn-edit" th:onclick="'location.href=\'/accounts/edit/'+${account.accountId}+'\';'">Edit</button>
