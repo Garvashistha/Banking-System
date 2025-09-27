@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Banking System - Withdraw</title>
+
+    <!-- Google Fonts: Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet" />
+
+    <style>
+        body, html {
+          margin: 0;
+          height: 100%;
+          font-family: 'Poppins', sans-serif;
+          background-color: #121212;
+          color: #e0e0e0;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .container {
+          display: flex;
+          height: 100vh;
+          overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+          background: linear-gradient(180deg, #1e1e2f 0%, #14141f 100%);
+          width: 260px;
+          display: flex;
+          flex-direction: column;
+          padding: 20px 0;
+        }
+
+        .sidebar .logo {
+          color: #66ccb7;
+          font-weight: 700;
+          font-size: 1.6rem;
+          text-align: center;
+          margin-bottom: 2rem;
+          letter-spacing: 1.2px;
+        }
+
+        .nav-links {
+          flex-grow: 1;
+        }
+
+        .nav-links a {
+          display: flex;
+          align-items: center;
+          padding: 15px 25px;
+          color: #bbb;
+          text-decoration: none;
+          font-weight: 500;
+          font-size: 1rem;
+          transition: color 0.25s ease, background 0.3s ease;
+          border-left: 4px solid transparent;
+        }
+
+        .nav-links a:hover,
+        .nav-links a.active {
+          background-color: #253244;
+          color: #66ccb7;
+          border-left-color: #66ccb7;
+        }
+
+        .nav-links svg {
+          width: 20px;
+          height: 20px;
+          fill: currentColor;
+          margin-right: 15px;
+          flex-shrink: 0;
+        }
+
+        /* Main content */
+        .main-content {
+          flex-grow: 1;
+          background: #181818;
+          display: flex;
+          flex-direction: column;
+          padding: 20px 30px;
+          overflow-y: auto;
+        }
+
+        /* Top bar */
+        .top-bar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding-bottom: 20px;
+          border-bottom: 1px solid #2c2c2c;
+          color: #ccc;
+        }
+
+        .top-bar h1 {
+          font-weight: 600;
+          font-size: 1.75rem;
+          color: #66ccb7;
+        }
+
+        .user-profile {
+          position: relative;
+          cursor: pointer;
+        }
+
+        .user-profile img {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          border: 2px solid #66ccb7;
+          object-fit: cover;
+          transition: border-color 0.3s ease;
+        }
+
+        .user-profile:hover img {
+          border-color: #3ea89d;
+        }
+
+        .dropdown-menu {
+          position: absolute;
+          right: 0;
+          top: 50px;
+          background: #222830;
+          border-radius: 8px;
+          box-shadow: 0 6px 15px rgba(0,0,0,0.5);
+          width: 150px;
+          display: none;
+          flex-direction: column;
+          z-index: 10;
+        }
+
+        .user-profile:focus-within .dropdown-menu,
+        .user-profile:hover .dropdown-menu {
+          display: flex;
+        }
+
+        .dropdown-menu a {
+          padding: 12px 20px;
+          color: #ccc;
+          text-decoration: none;
+          font-weight: 500;
+          transition: background-color 0.25s ease;
+        }
+
+        .dropdown-menu a:hover {
+          background-color: #3ea89d;
+          color: white;
+        }
+
+        /* Withdraw form */
+        .form-section {
+          background: #222830;
+          border-radius: 12px;
+          padding: 25px 30px;
+          box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+          max-width: 500px;
+          margin: 40px auto;
+          color: #ddd;
+        }
+
+        form {
+          display: flex;
+          flex-direction: column;
+        }
+
+        label {
+          font-weight: 600;
+          margin-bottom: 8px;
+          color: #66ccb7;
+        }
+
+        select, input[type="number"] {
+          padding: 12px 15px;
+          border-radius: 8px;
+          border: none;
+          background-color: #1b1f27;
+          color: #eee;
+          font-size: 1rem;
+          margin-bottom: 20px;
+          outline: none;
+          transition: box-shadow 0.3s ease;
+          -moz-appearance: textfield;
+          -webkit-appearance: none;
+          appearance: none;
+        }
+
+        /* Remove arrow on number input */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+
+        select:focus, input[type="number"]:focus {
+          box-shadow: 0 0 10px 2px rgba(102, 170, 255, 0.5);
+          color: white;
+        }
+
+        /* Remove blue background on selected option */
+        select option:checked {
+          background-color: transparent !important;
+          color: #eee;
+        }
+
+        button {
+          background: #3ea89d;
+          border: none;
+          color: white;
+          padding: 14px 0;
+          border-radius: 8px;
+          font-size: 1.1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+          background: #66ccb7;
+        }
+
+        @media (max-width: 600px) {
+          .form-section {
+            margin: 20px 15px;
+            padding: 20px;
+          }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" aria-label="Primary">
+        <div class="logo">BankSys</div>
+        <div class="nav-links">
+            <a th:href="@{/dashboard}" title="Dashboard">
+                <svg fill="currentColor" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zM3 21h8v-6H3v6zM13 21h8v-10h-8v10zM13 3v6h8V3h-8z"/></svg>
+                Dashboard
+            </a>
+            <a th:href="@{/customers}" title="Customers">
+                <svg fill="currentColor" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zM10 11c1.66 0 2.99-1.34 2.99-3S11.66 5 10 5 7 6.34 7 8s1.34 3 3 3zM10 13c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                Customers
+            </a>
+            <a th:href="@{/accounts}" title="Accounts">
+                <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                Accounts
+            </a>
+            <a class="active" th:href="@{/transactions}" title="Transactions">
+                <svg fill="currentColor" viewBox="0 0 24 24"><path d="M17 1H7c-1.11 0-2 .9-2 2v18c0 1.1.89 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zM7 21V3h10v18H7zm5-14h2v5h-2z"/></svg>
+                Transactions
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content" role="main">
+        <div class="top-bar">
+            <h1>Withdraw Money</h1>
+            <div class="user-profile" tabindex="0" aria-label="User profile menu">
+                <img src="https://ui-avatars.com/api/?name="  th:src="'https://ui-avatars.com/api/?name=' " alt="User Avatar" />
+                <div class="dropdown-menu" role="menu" aria-hidden="true">
+                    <a th:href="@{/profile}">Profile</a>
+                    <a th:href="@{/logout}">Logout</a>
+                </div>
+            </div>
+        </div>
+
+        <section class="form-section">
+            <!-- FIX: remove th:object and use explicit names to match @RequestParam -->
+            <form th:action="@{/transactions/withdraw}" method="post">
+                <label for="account">Select Account</label>
+                <!-- FIX: name="accountId" so controller receives @RequestParam Long accountId -->
+                <select id="account" name="accountId" required>
+                    <option value="" disabled selected>Select your account</option>
+                    <option th:each="acc : ${accounts}"
+                            th:value="${acc.accountId}"
+                            th:text="${acc.accountId + ' - ' + acc.accountType}">
+                    </option>
+                </select>
+
+                <label for="amount">Amount</label>
+                <!-- FIX: name="amount" so controller receives @RequestParam BigDecimal amount -->
+                <input type="number" id="amount" name="amount" placeholder="Enter amount" min="1" step="0.01" required />
+
+                <button type="submit">Withdraw</button>
+            </form>
+        </section>
+    </main>
+</div>
+
+
+</body>
+</html>

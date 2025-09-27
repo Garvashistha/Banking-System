@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Banking System Registration</title>
+
+    <!-- Google Fonts: Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet" />
+
+    <style>
+        * { box-sizing: border-box; }
+        body, html {
+          height: 100%;
+          margin: 0;
+          font-family: 'Poppins', sans-serif;
+          background-color: #121212;
+          color: #eee;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 20px;
+        }
+
+        .register-card {
+          background: #1f1f1f;
+          padding: 40px 30px;
+          border-radius: 12px;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+          width: 100%;
+          max-width: 420px;
+          text-align: center;
+        }
+
+        h2 {
+          margin-bottom: 30px;
+          font-weight: 600;
+          color: #66aaff;
+        }
+
+        form {
+          display: flex;
+          flex-direction: column;
+          text-align: left;
+        }
+
+        label {
+          margin-bottom: 6px;
+          font-size: 0.95rem;
+          color: #bbb;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+          padding: 12px 15px;
+          margin-bottom: 20px;
+          border: none;
+          border-radius: 8px;
+          background-color: #2c2c2c;
+          color: #eee;
+          font-size: 1rem;
+          transition: background-color 0.3s ease, box-shadow 0.3s ease, border 0.3s ease;
+          outline: none;
+          box-shadow: none;
+          -webkit-appearance: none;
+          -moz-appearance: none;
+          appearance: none;
+        }
+
+        /* Custom validation feedback */
+        input:invalid {
+          border: 2px solid #b00020; /* red border if invalid */
+        }
+        input:valid {
+          border: 2px solid #2a7a2a; /* green border if valid */
+        }
+
+        /* Focus effect (subtle glow) */
+        input:focus {
+          background-color: #2c2c2c;
+          box-shadow: 0 0 6px 2px rgba(102, 170, 255, 0.2);
+          color: white;
+        }
+
+        button {
+          background-color: #3a5ca8;
+          border: none;
+          color: white;
+          padding: 14px 0;
+          border-radius: 8px;
+          font-size: 1.1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background-color 0.25s ease;
+        }
+
+        button:hover {
+          background-color: #2851a3;
+        }
+
+        .error-message {
+          background-color: #b00020;
+          color: #fff;
+          padding: 10px;
+          border-radius: 6px;
+          margin-bottom: 15px;
+          font-size: 0.95rem;
+          text-align: center;
+        }
+        .success-message {
+          background-color: #2a7a2a;
+          color: #fff;
+          padding: 10px;
+          border-radius: 6px;
+          margin-bottom: 15px;
+          font-size: 0.95rem;
+          text-align: center;
+        }
+
+        .login-link {
+          margin-top: 20px;
+          text-align: center;
+          font-size: 0.9rem;
+          color: #999;
+        }
+
+        .login-link a {
+          color: #66aaff;
+          text-decoration: none;
+          transition: color 0.3s ease;
+        }
+
+        .login-link a:hover {
+          color: #3080d9;
+        }
+
+        @media (max-width: 480px) {
+          .register-card { padding: 30px 20px; }
+        }
+    </style>
+</head>
+<body>
+<div class="register-card">
+    <h2>Register Your Account</h2>
+
+    <!-- Only show messages if present -->
+    <div th:if="${error}" class="error-message" th:text="${error}"></div>
+    <div th:if="${success}" class="success-message" th:text="${success}"></div>
+
+    <form th:action="@{/register}" method="post" th:object="${user}">
+        <label for="username">Username</label>
+        <input type="text" id="username" th:field="*{username}" placeholder="Choose a username" required autofocus />
+
+        <label for="password">Password</label>
+        <input type="password" id="password" th:field="*{password}" placeholder="Enter password" required minlength="8" />
+
+        <label for="confirmPassword">Confirm Password</label>
+        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Repeat password" required minlength="8" />
+
+        <button type="submit">Register</button>
+    </form>
+
+    <div class="login-link">
+        Already have an account? <a th:href="@{/login}">Login here</a>
+    </div>
+</div>
+</body>
+</html>

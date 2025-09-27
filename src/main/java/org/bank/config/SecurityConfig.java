@@ -43,26 +43,39 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/","/login", "/register", "/register/**", "/css/**", "/js/**", "/images/**").permitAll()
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/customers/**", "/accounts/**", "/transactions/**", "/dashboard").hasRole("USER")
-                        .anyRequest().authenticated()
-                )
-                .formLogin(form -> form
-                        .loginPage("/login")
-                        .loginProcessingUrl("/perform_login")
-                        .successHandler(customAuthenticationSuccessHandler())
-                        .failureUrl("/login?error")
-                        .permitAll()
-                )
-                .logout(logout -> logout
-                        .logoutUrl("/logout")
-                        .logoutSuccessUrl("/login?logout")
-                        .permitAll()
-                )
-                .authenticationProvider(authenticationProvider());
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(auth -> auth
+                // ✅ Swagger endpoints should be public
+                .requestMatchers(
+                    "/swagger-ui.html",
+                    "/swagger-ui/**",
+                    "/v3/api-docs/**"
+                ).permitAll()
+
+                // ✅ Public endpoints
+                .requestMatchers("/", "/login", "/register", "/register/**",
+                        "/css/**", "/js/**", "/images/**").permitAll()
+
+                // ✅ Role-based endpoints
+                .requestMatchers("/admin/**").hasRole("ADMIN")
+                .requestMatchers("/customers/**", "/accounts/**", "/transactions/**", "/dashboard").hasRole("USER")
+
+                // ✅ Everything else requires login
+                .anyRequest().authenticated()
+            )
+            .formLogin(form -> form
+                .loginPage("/login")
+                .loginProcessingUrl("/perform_login")
+                .successHandler(customAuthenticationSuccessHandler())
+                .failureUrl("/login?error")
+                .permitAll()
+            )
+            .logout(logout -> logout
+                .logoutUrl("/logout")
+                .logoutSuccessUrl("/login?logout")
+                .permitAll()
+            )
+            .authenticationProvider(authenticationProvider());
 
         return http.build();
     }

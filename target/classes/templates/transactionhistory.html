@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Transaction History</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet" />
+
+    <style>
+        /* Reset & base */
+        *, *::before, *::after { box-sizing: border-box; }
+        body, html {
+            margin: 0; height: 100%;
+            font-family: 'Poppins', sans-serif;
+            background: #121212; color: #e0e0e0;
+        }
+
+        /* Layout */
+        .container { display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar (copied from dashboard.html) */
+        .sidebar {
+            background: linear-gradient(180deg, #1e1e2f 0%, #14141f 100%);
+            width: 260px; display: flex; flex-direction: column; padding: 20px 0;
+        }
+        .sidebar .logo {
+            color: #66ccb7; font-weight: 700; font-size: 1.6rem;
+            text-align: center; margin-bottom: 2rem; letter-spacing: 1.2px;
+        }
+
+        .nav-links { flex-grow: 1; }
+        .nav-links .menu-item { display: flex; flex-direction: column; }
+
+        .nav-links a.main-link {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 25px;
+            color: #bbb; text-decoration: none; font-weight: 500; font-size: 1rem;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent; cursor: pointer;
+        }
+        .nav-links a.main-link:hover,
+        .nav-links a.main-link.active-link {
+            background: #253244; color: #66ccb7; border-left-color: #66ccb7;
+            box-shadow: inset 2px 0 0 #66ccb7;
+        }
+
+        .arrow { transition: transform 0.3s ease; }
+        .menu-item.open .arrow { transform: rotate(90deg); }
+
+        .submenu {
+            max-height: 0; overflow: hidden;
+            background: #181a25;
+            transition: max-height 0.4s ease, padding 0.3s ease;
+            display: flex; flex-direction: column;
+            border-left: 2px solid #253244;
+        }
+        .menu-item.open .submenu {
+            max-height: 500px;
+            padding: 5px 0;
+        }
+        .submenu a {
+            padding: 12px 45px;
+            color: #aaa; text-decoration: none; font-size: 0.9rem;
+            transition: all 0.25s ease;
+            position: relative;
+        }
+        .submenu a::before {
+            content: "•";
+            position: absolute;
+            left: 25px; color: #444; font-size: 1.2rem;
+            transition: color 0.3s ease;
+        }
+        .submenu a:hover {
+            background: #2a3445; color: #66ccb7;
+        }
+        .submenu a:hover::before { color: #66ccb7; }
+        .submenu a.active-sub {
+            color: #66ccb7; font-weight: 600; background: #222c3a;
+            border-radius: 6px;
+        }
+
+        .logout-link {
+            margin-top: auto;
+            padding: 15px 25px;
+            color: #f55; text-decoration: none; font-weight: 600; font-size: 1rem;
+            transition: background 0.3s ease, color 0.3s ease;
+            border-top: 1px solid #333;
+        }
+        .logout-link:hover {
+            background: #2a1e1e; color: #ff6b6b;
+        }
+
+        /* Main content */
+        .main-content {
+            flex-grow: 1; background: #181818;
+            display: flex; flex-direction: column;
+            padding: 20px 30px; overflow-y: auto;
+        }
+
+        .top-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding-bottom: 10px; border-bottom: 1px solid #2c2c2c; color: #ccc;
+        }
+        .top-bar h1 {
+            font-weight: 600; font-size: 1.75rem; color: #66ccb7; margin: 0;
+        }
+        .top-bar p { font-weight: 500; font-size: 1rem; margin: 5px 0 0 0; }
+
+        .user-profile { position: relative; cursor: pointer; }
+        .user-profile img {
+            width: 40px; height: 40px; border-radius: 50%;
+            border: 2px solid #66ccb7; object-fit: cover;
+        }
+        .dropdown-menu {
+            position: absolute; right: 0; top: 50px; background: #222830;
+            border-radius: 8px; box-shadow: 0 6px 15px rgba(0,0,0,0.5);
+            width: 150px; display: none; flex-direction: column; z-index: 10;
+        }
+        .user-profile:focus-within .dropdown-menu,
+        .user-profile:hover .dropdown-menu { display: flex; }
+        .dropdown-menu a {
+            padding: 12px 20px; color: #ccc; text-decoration: none; font-weight: 500;
+            transition: background-color 0.25s ease;
+        }
+        .dropdown-menu a:hover { background-color: #3ea89d; color: white; }
+
+        /* Sections */
+        .section {
+            margin-top: 25px; background: #222830; border-radius: 12px;
+            padding: 20px 25px; box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+        }
+        .section h2 {
+            margin-top: 0; font-weight: 600; color: #66ccb7; margin-bottom: 20px;
+        }
+
+        /* Transactions table */
+        .transactions-table {
+            width: 100%; border-collapse: collapse; color: #ddd; font-size: 0.95rem;
+        }
+        .transactions-table th, .transactions-table td {
+            padding: 12px 15px; border-bottom: 1px solid #333a45; text-align: left;
+        }
+        .transactions-table th {
+            cursor: pointer; color: #90e0ef; font-weight: 600;
+        }
+        .transactions-table tbody tr:hover { background-color: #2f3b44; }
+        .status-completed { color: #66ccb7; font-weight: 600; }
+        .status-pending { color: #fcca46; font-weight: 600; }
+        .status-failed { color: #df2935; font-weight: 600; }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .container { flex-direction: column; }
+            .sidebar { width: 100%; flex-direction: row; overflow-x: auto; }
+            .nav-links a.main-link {
+                flex-direction: column; padding: 10px 15px; font-size: 0.85rem;
+            }
+            .main-content { padding: 15px 20px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="logo">BankSys</div>
+        <div class="nav-links">
+            <div class="menu-item"><a th:href="@{/dashboard}" class="main-link">Dashboard</a></div>
+            <div class="menu-item">
+                <a class="main-link">Accounts <span class="arrow">▶</span></a>
+                <div class="submenu">
+                    <a th:href="@{/accounts/savings}">Savings Account</a>
+                    <a th:href="@{/accounts/current}">Current Account</a>
+                    <a th:href="@{/accounts/balance}">View Balance</a>
+                    <a th:href="@{/accounts/open}">Open Account</a>
+                </div>
+            </div>
+            <div class="menu-item">
+                <a class="main-link">Transactions <span class="arrow">▶</span></a>
+                <div class="submenu">
+                    <a th:href="@{/transactions/deposit}">Deposit</a>
+                    <a th:href="@{/transactions/withdraw}">Withdraw</a>
+                    <a th:href="@{/transactions/transfer}">Transfer</a>
+                    <a th:href="@{/transactions/transactionhistory}" class="active-sub">Transaction History</a>
+                </div>
+            </div>
+            <div class="menu-item">
+                <a class="main-link">Profile <span class="arrow">▶</span></a>
+                <div class="submenu">
+                    <a th:href="@{/customers/profile}">Update Profile</a>
+                </div>
+            </div>
+        </div>
+        <a th:href="@{/logout}" class="logout-link">Logout</a>
+    </nav>
+
+    <!-- Main -->
+    <main class="main-content">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <h1>Transaction History</h1>
+            <p th:text="'WELCOME, ' + ${customer != null ? customer.name : user.username}">WELCOME, User</p>
+            <div class="user-profile" tabindex="0">
+                <img th:alt="${customer != null ? customer.name : user.username}"
+                     th:src="${customer != null ? 'https://ui-avatars.com/api/?name=' + customer.name : 'https://ui-avatars.com/api/?name=' + user.username}" />
+                <div class="dropdown-menu">
+                    <a th:href="@{/customers/profile}">Profile</a>
+                    <a th:href="@{/logout}">Logout</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transactions -->
+        <section class="section transactions-history">
+            <h2>All Transactions</h2>
+            <table class="transactions-table" th:if="${transactions != null && transactions.size() > 0}">
+                <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="trans : ${transactions}">
+                    <td th:text="${trans.timestamp}"></td>
+                    <td th:text="${trans.transactionType}"></td>
+                    <td th:text="${trans.amount}"></td>
+                    <td th:text="${trans.status}"
+                        th:classappend="${trans.status != null ? (trans.status.equalsIgnoreCase('completed') ? 'status-completed' : (trans.status.equalsIgnoreCase('failed') ? 'status-failed' : 'status-pending')) : ''}">
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            <p th:if="${transactions == null || transactions.size()==0}">No transactions found.</p>
+        </section>
+    </main>
+</div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    document.querySelectorAll('.menu-item .main-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            if(this.nextElementSibling && this.nextElementSibling.classList.contains('submenu')) {
+                e.preventDefault();
+                this.parentElement.classList.toggle('open');
+            }
+        });
+    });
+    /*]]>*/
+</script>
+</body>
+</html>

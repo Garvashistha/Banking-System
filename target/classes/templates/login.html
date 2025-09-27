@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Banking System Login</title>
+
+    <!-- Google Fonts: Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet" />
+
+    <style>
+        /* Reset & base */
+        * {
+            box-sizing: border-box;
+        }
+
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background-color: #121212; /* Dark background */
+            color: #eee;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* Login card */
+        .login-card {
+            background: #1f1f1f;
+            padding: 40px 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        /* Heading */
+        h2 {
+            margin-bottom: 30px;
+            font-weight: 600;
+            color: #66aaff; /* Soft blue */
+        }
+
+        /* Form fields */
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            text-align: left;
+            margin-bottom: 6px;
+            font-size: 0.95rem;
+            color: #bbb;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            border: none;
+            border-radius: 8px;
+            background-color: #2c2c2c;
+            color: #eee;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            background-color: #3a5ca8;
+            outline: none;
+            color: white;
+        }
+
+        /* Remember me checkbox */
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            color: #bbb;
+            font-size: 0.9rem;
+        }
+
+        .checkbox-container input[type="checkbox"] {
+            margin-right: 10px;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        /* Login button */
+        button {
+            background-color: #3a5ca8;
+            border: none;
+            color: white;
+            padding: 14px 0;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.25s ease;
+        }
+
+        button:hover {
+            background-color: #2851a3;
+        }
+
+        /* Error message */
+        .error-message {
+            background-color: #b00020;
+            color: #fff;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+
+        /* Forgot password link */
+        .forgot-password {
+            margin-top: 20px;
+            font-size: 0.85rem;
+            color: #999;
+        }
+
+        .forgot-password a {
+            color: #66aaff;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .forgot-password a:hover {
+            color: #3080d9;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="login-card">
+    <h2>Login to Your Account</h2>
+
+    <form th:action="@{/perform_login}" method="post">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" placeholder="Enter username" required autofocus />
+
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Enter password" required />
+
+        <div class="checkbox-container">
+            <input type="checkbox" id="remember-me" name="remember-me" />
+            <label for="remember-me">Remember Me</label>
+        </div>
+
+        <button type="submit">Login</button>
+    </form>
+    <div class="forgot-password">
+        <a th:href="@{/forgot-password}">Forgot Password?</a> |
+        <a th:href="@{/register}">New user? Register yourself</a>
+    </div>
+
+</div>
+</body>
+</html>
