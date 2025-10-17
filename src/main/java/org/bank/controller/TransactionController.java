@@ -15,6 +15,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -59,7 +60,6 @@ public class TransactionController {
         return "transactionhistory";
     }
 
-
     // ================== DEPOSIT ==================
     @GetMapping("/deposit")
     public String showDepositForm(Model model, Authentication authentication) {
@@ -71,7 +71,7 @@ public class TransactionController {
 
         List<Account> accounts = accountService.findByCustomerId(customer.getCustomerId());
         model.addAttribute("accounts", accounts);
-        model.addAttribute("user", user); // 🔥 Added
+        model.addAttribute("user", user);
 
         return "deposit_form";
     }
@@ -84,12 +84,22 @@ public class TransactionController {
         if (user == null) return "redirect:/login";
 
         try {
-            accountService.deposit(accountId, amount);
+            Account account = accountService.findById(accountId);
+            if (account == null) return "redirect:/transactions/deposit?error=Invalid+Account";
+
+            // Create transaction record
+            Transaction transaction = new Transaction();
+            transaction.setAccount(account);
+            transaction.setAmount(amount);
+            transaction.setTransactionType("deposit");
+            transaction.setTimestamp(LocalDateTime.now());
+
+            transactionService.save(transaction);
         } catch (RuntimeException e) {
-            return "redirect:/transactions?error=" + e.getMessage();
+            return "redirect:/transactions/deposit?error=" + e.getMessage();
         }
 
-        return "redirect:/dashboard";
+        return "redirect:/dashboard?success=Deposit+completed";
     }
 
     // ================== WITHDRAW ==================
@@ -103,7 +113,7 @@ public class TransactionController {
 
         List<Account> accounts = accountService.findByCustomerId(customer.getCustomerId());
         model.addAttribute("accounts", accounts);
-        model.addAttribute("user", user); // 🔥 Added
+        model.addAttribute("user", user);
 
         return "withdraw_form";
     }
@@ -116,12 +126,21 @@ public class TransactionController {
         if (user == null) return "redirect:/login";
 
         try {
-            accountService.withdraw(accountId, amount);
+            Account account = accountService.findById(accountId);
+            if (account == null) return "redirect:/transactions/withdraw?error=Invalid+Account";
+
+            Transaction transaction = new Transaction();
+            transaction.setAccount(account);
+            transaction.setAmount(amount);
+            transaction.setTransactionType("withdraw");
+            transaction.setTimestamp(LocalDateTime.now());
+
+            transactionService.save(transaction);
         } catch (RuntimeException e) {
-            return "redirect:/dashboard?error=" + e.getMessage();
+            return "redirect:/transactions/withdraw?error=" + e.getMessage();
         }
 
-        return "redirect:/dashboard";
+        return "redirect:/dashboard?success=Withdrawal+completed";
     }
 
     // ================== TRANSFER ==================
@@ -133,15 +152,12 @@ public class TransactionController {
         Customer customer = customerService.findByUserId(user.getId());
         if (customer == null) return "redirect:/login";
 
-        // Source accounts: only for the logged-in customer
         List<Account> accounts = accountService.findByCustomerId(customer.getCustomerId());
-
-        // Destination accounts: all accounts in the system
         List<Account> allAccounts = accountService.findAll();
 
         model.addAttribute("accounts", accounts);
         model.addAttribute("allAccounts", allAccounts);
-        model.addAttribute("user", user); // 🔥 Added
+        model.addAttribute("user", user);
 
         return "transfer_form";
     }
@@ -154,16 +170,36 @@ public class TransactionController {
         User user = getUser(authentication);
         if (user == null) return "redirect:/login";
         if (fromAccountId.equals(toAccountId)) {
-            return "redirect:/transactions/transfer?error=Cannot+transfer+to+the+same+account";
+            return "redirect:/transactions/transfer?error=Cannot+transfer+to+same+account";
         }
 
         try {
-            accountService.transfer(fromAccountId, toAccountId, amount);
+            Account fromAccount = accountService.findById(fromAccountId);
+            Account toAccount = accountService.findById(toAccountId);
+            if (fromAccount == null || toAccount == null)
+                return "redirect:/transactions/transfer?error=Invalid+Accounts";
+
+            // Debit from source account
+            Transaction debitTx = new Transaction();
+            debitTx.setAccount(fromAccount);
+            debitTx.setAmount(amount);
+            debitTx.setTransactionType("transfer");
+            debitTx.setTimestamp(LocalDateTime.now());
+            transactionService.save(debitTx);
+
+            // Credit to destination account (as a deposit)
+            Transaction creditTx = new Transaction();
+            creditTx.setAccount(toAccount);
+            creditTx.setAmount(amount);
+            creditTx.setTransactionType("deposit");
+            creditTx.setTimestamp(LocalDateTime.now());
+            transactionService.save(creditTx);
+
         } catch (RuntimeException e) {
-            return "redirect:/dashboard?error=" + e.getMessage();
+            return "redirect:/transactions/transfer?error=" + e.getMessage();
         }
 
-        return "redirect:/dashboard";
+        return "redirect:/dashboard?success=Transfer+completed";
     }
 
     // ================== HELPER ==================
