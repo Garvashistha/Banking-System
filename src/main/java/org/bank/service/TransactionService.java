@@ -16,14 +16,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * TransactionService with concurrency control and BigDecimal-safe arithmetic.
- * Notes:
- * - Uses optimistic locking on Account (requires @Version in Account entity).
- * - Updates Account balance inside a @Transactional method and saves the Transaction.
- * - Retries on optimistic lock conflicts up to MAX_RETRIES.
- * - Preserves original public method signatures and find methods.
- */
 @Service
 public class TransactionService {
 
@@ -47,97 +39,125 @@ public class TransactionService {
         return transactionRepository.findById(id);
     }
 
-    /**
-     * Save a transaction safely with concurrency control.
-     *
-     * - If transaction.account is present and accountId is non-null, the service will:
-     *   * fetch the latest Account,
-     *   * update the Account.balance according to transactionType (deposit/withdraw/transfer),
-     *   * save the Account and then save the Transaction, all inside a transaction.
-     *
-     * - Uses BigDecimal arithmetic to avoid precision errors and compilation issues.
-     */
+    // ================== DEPOSIT ==================
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public Transaction save(Transaction transaction) {
+    public Transaction deposit(Long accountId, BigDecimal amount) {
+        validateAmount(amount);
         int attempts = 0;
 
         while (true) {
             try {
-                // Ensure timestamp
-                if (transaction.getTimestamp() == null) {
-                    transaction.setTimestamp(LocalDateTime.now());
-                }
+                Account account = accountRepository.findById(accountId)
+                        .orElseThrow(() -> new IllegalArgumentException("Account not found: " + accountId));
 
-                // If transaction references an account, update balance accordingly
-                if (transaction.getAccount() != null && transaction.getAccount().getAccountId() != null) {
-                    Long accountId = transaction.getAccount().getAccountId();
+                BigDecimal balance = account.getBalance() != null ? account.getBalance() : BigDecimal.ZERO;
+                account.setBalance(balance.add(amount));
+                accountRepository.save(account);
 
-                    Account account = accountRepository.findById(accountId)
-                            .orElseThrow(() -> new IllegalArgumentException("Account not found: " + accountId));
-
-                    // Normalize transaction amount to BigDecimal
-                    BigDecimal amount = transaction.getAmount() != null ? transaction.getAmount() : BigDecimal.ZERO;
-
-                    String type = transaction.getTransactionType() != null
-                            ? transaction.getTransactionType().toLowerCase().trim()
-                            : "";
-
-                    // Current balance (non-null expected; if null treat as zero)
-                    BigDecimal currentBalance = account.getBalance() != null ? account.getBalance() : BigDecimal.ZERO;
-
-                    switch (type) {
-                        case "deposit":
-                            account.setBalance(currentBalance.add(amount));
-                            break;
-
-                        case "withdraw":
-                            // Reject if insufficient funds
-                            if (currentBalance.compareTo(amount) < 0) {
-                                throw new IllegalStateException("Insufficient balance for withdrawal");
-                            }
-                            account.setBalance(currentBalance.subtract(amount));
-                            break;
-
-                        case "transfer":
-                            // Here we treat a 'transfer' on this transaction as a debit from this account.
-                            // If your app creates a separate credit transaction for destination account,
-                            // that should be handled by the code that calls this service.
-                            if (currentBalance.compareTo(amount) < 0) {
-                                throw new IllegalStateException("Insufficient balance for transfer");
-                            }
-                            account.setBalance(currentBalance.subtract(amount));
-                            break;
-
-                        default:
-                            // Unknown transaction type: do not modify account balance.
-                            break;
-                    }
-
-                    // Save account (may throw OptimisticLockingFailureException if version mismatch)
-                    accountRepository.save(account);
-
-                    // Make sure the transaction references the managed account instance
-                    transaction.setAccount(account);
-                }
-
-                // Save transaction record
-                return transactionRepository.save(transaction);
+                Transaction tx = new Transaction();
+                tx.setAccount(account);
+                tx.setAmount(amount);
+                tx.setTransactionType("deposit");
+                tx.setTimestamp(LocalDateTime.now());
+                return transactionRepository.save(tx);
             } catch (OptimisticLockingFailureException | jakarta.persistence.OptimisticLockException ex) {
-                attempts++;
-                if (attempts >= MAX_RETRIES) {
-                    throw ex;
-                }
-                // small backoff before retrying
-                try {
-                    Thread.sleep(100L * attempts);
-                } catch (InterruptedException ignored) {
-                    Thread.currentThread().interrupt();
-                }
-                // retry loop continues
+                if (++attempts >= MAX_RETRIES) throw ex;
+                sleepBeforeRetry(attempts);
             }
         }
     }
 
+    // ================== WITHDRAW ==================
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public Transaction withdraw(Long accountId, BigDecimal amount) {
+        validateAmount(amount);
+        int attempts = 0;
+
+        while (true) {
+            try {
+                Account account = accountRepository.findById(accountId)
+                        .orElseThrow(() -> new IllegalArgumentException("Account not found: " + accountId));
+
+                BigDecimal balance = account.getBalance() != null ? account.getBalance() : BigDecimal.ZERO;
+                if (balance.compareTo(amount) < 0) {
+                    throw new IllegalStateException("Insufficient balance for withdrawal");
+                }
+                account.setBalance(balance.subtract(amount));
+                accountRepository.save(account);
+
+                Transaction tx = new Transaction();
+                tx.setAccount(account);
+                tx.setAmount(amount);
+                tx.setTransactionType("withdraw");
+                tx.setTimestamp(LocalDateTime.now());
+                return transactionRepository.save(tx);
+            } catch (OptimisticLockingFailureException | jakarta.persistence.OptimisticLockException ex) {
+                if (++attempts >= MAX_RETRIES) throw ex;
+                sleepBeforeRetry(attempts);
+            }
+        }
+    }
+
+    @Transactional
+    public Transaction logTransaction(Transaction transaction) {
+        if (transaction.getTimestamp() == null) {
+            transaction.setTimestamp(LocalDateTime.now());
+        }
+        return transactionRepository.save(transaction);
+    }
+
+    // ================== TRANSFER ==================
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public void transfer(Long fromAccountId, Long toAccountId, BigDecimal amount) {
+        validateAmount(amount);
+        if (fromAccountId.equals(toAccountId)) {
+            throw new IllegalArgumentException("Cannot transfer to the same account");
+        }
+
+        int attempts = 0;
+        while (true) {
+            try {
+                Account fromAccount = accountRepository.findById(fromAccountId)
+                        .orElseThrow(() -> new IllegalArgumentException("Source account not found: " + fromAccountId));
+                Account toAccount = accountRepository.findById(toAccountId)
+                        .orElseThrow(() -> new IllegalArgumentException("Destination account not found: " + toAccountId));
+
+                BigDecimal fromBalance = fromAccount.getBalance() != null ? fromAccount.getBalance() : BigDecimal.ZERO;
+                if (fromBalance.compareTo(amount) < 0) {
+                    throw new IllegalStateException("Insufficient balance for transfer");
+                }
+
+                // update balances
+                fromAccount.setBalance(fromBalance.subtract(amount));
+                BigDecimal toBalance = toAccount.getBalance() != null ? toAccount.getBalance() : BigDecimal.ZERO;
+                toAccount.setBalance(toBalance.add(amount));
+                accountRepository.save(fromAccount);
+                accountRepository.save(toAccount);
+
+                // create transaction records
+                Transaction debitTx = new Transaction();
+                debitTx.setAccount(fromAccount);
+                debitTx.setAmount(amount);
+                debitTx.setTransactionType("transfer-out");
+                debitTx.setTimestamp(LocalDateTime.now());
+                transactionRepository.save(debitTx);
+
+                Transaction creditTx = new Transaction();
+                creditTx.setAccount(toAccount);
+                creditTx.setAmount(amount);
+                creditTx.setTransactionType("transfer-in");
+                creditTx.setTimestamp(LocalDateTime.now());
+                transactionRepository.save(creditTx);
+
+                return;
+            } catch (OptimisticLockingFailureException | jakarta.persistence.OptimisticLockException ex) {
+                if (++attempts >= MAX_RETRIES) throw ex;
+                sleepBeforeRetry(attempts);
+            }
+        }
+    }
+
+    // ================== FIND METHODS ==================
     public void deleteById(Long id) {
         transactionRepository.deleteById(id);
     }
@@ -156,5 +176,20 @@ public class TransactionService {
 
     public List<Transaction> findByCustomer(Customer customer) {
         return transactionRepository.findByAccountCustomerOrderByTimestampDesc(customer);
+    }
+
+    // ================== HELPERS ==================
+    private void validateAmount(BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Amount must be positive");
+        }
+    }
+
+    private void sleepBeforeRetry(int attempt) {
+        try {
+            Thread.sleep(100L * attempt);
+        } catch (InterruptedException ignored) {
+            Thread.currentThread().interrupt();
+        }
     }
 }

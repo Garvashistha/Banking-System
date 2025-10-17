@@ -79,7 +79,8 @@ public class AccountServiceImpl implements AccountService {
                 transaction.setAmount(amount);
                 transaction.setTimestamp(LocalDateTime.now());
                 transaction.setStatus("SUCCESS");
-                transactionService.save(transaction);
+                transactionService.logTransaction(transaction);
+
                 return;
             } catch (OptimisticLockingFailureException | jakarta.persistence.OptimisticLockException e) {
                 attempts++;
@@ -116,7 +117,8 @@ public class AccountServiceImpl implements AccountService {
                 transaction.setAmount(amount);
                 transaction.setTimestamp(LocalDateTime.now());
                 transaction.setStatus("SUCCESS");
-                transactionService.save(transaction);
+                transactionService.logTransaction(transaction);
+
                 return;
             } catch (OptimisticLockingFailureException | jakarta.persistence.OptimisticLockException e) {
                 attempts++;
@@ -161,7 +163,8 @@ public class AccountServiceImpl implements AccountService {
                 debit.setAmount(amount);
                 debit.setTimestamp(LocalDateTime.now());
                 debit.setStatus("SUCCESS");
-                transactionService.save(debit);
+                transactionService.logTransaction(debit);
+
 
                 // record credit transaction (receiver)
                 Transaction credit = new Transaction();
@@ -170,7 +173,8 @@ public class AccountServiceImpl implements AccountService {
                 credit.setAmount(amount);
                 credit.setTimestamp(LocalDateTime.now());
                 credit.setStatus("SUCCESS");
-                transactionService.save(credit);
+                transactionService.logTransaction(credit);
+
                 return;
             } catch (OptimisticLockingFailureException | jakarta.persistence.OptimisticLockException e) {
                 attempts++;

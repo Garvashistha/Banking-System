@@ -2,7 +2,6 @@ package org.bank.controller;
 
 import org.bank.entities.Account;
 import org.bank.entities.Customer;
-import org.bank.entities.Transaction;
 import org.bank.entities.User;
 import org.bank.service.AccountService;
 import org.bank.service.AuthService;
@@ -15,10 +14,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Controller
 @RequestMapping("/transactions")
@@ -50,7 +47,7 @@ public class TransactionController {
         if (customer == null) return "redirect:/login";
 
         List<Account> accounts = accountService.findByCustomerId(customer.getCustomerId());
-        List<Transaction> transactions = new ArrayList<>();
+        List<org.bank.entities.Transaction> transactions = new ArrayList<>();
 
         for (Account account : accounts) {
             transactions.addAll(transactionService.findByAccountId(account.getAccountId()));
@@ -85,17 +82,7 @@ public class TransactionController {
         if (user == null) return "redirect:/login";
 
         try {
-            Account account = accountService.findById(accountId).orElse(null);
-            if (account == null) return "redirect:/transactions/deposit?error=Invalid+Account";
-
-            // Create transaction record
-            Transaction transaction = new Transaction();
-            transaction.setAccount(account);
-            transaction.setAmount(amount);
-            transaction.setTransactionType("deposit");
-            transaction.setTimestamp(LocalDateTime.now());
-
-            transactionService.save(transaction);
+            transactionService.deposit(accountId, amount);
         } catch (RuntimeException e) {
             return "redirect:/transactions/deposit?error=" + e.getMessage();
         }
@@ -127,16 +114,7 @@ public class TransactionController {
         if (user == null) return "redirect:/login";
 
         try {
-            Account account = accountService.findById(accountId).orElse(null);
-            if (account == null) return "redirect:/transactions/withdraw?error=Invalid+Account";
-
-            Transaction transaction = new Transaction();
-            transaction.setAccount(account);
-            transaction.setAmount(amount);
-            transaction.setTransactionType("withdraw");
-            transaction.setTimestamp(LocalDateTime.now());
-
-            transactionService.save(transaction);
+            transactionService.withdraw(accountId, amount);
         } catch (RuntimeException e) {
             return "redirect:/transactions/withdraw?error=" + e.getMessage();
         }
@@ -170,32 +148,9 @@ public class TransactionController {
                                   Authentication authentication) {
         User user = getUser(authentication);
         if (user == null) return "redirect:/login";
-        if (fromAccountId.equals(toAccountId)) {
-            return "redirect:/transactions/transfer?error=Cannot+transfer+to+same+account";
-        }
 
         try {
-            Account fromAccount = accountService.findById(fromAccountId).orElse(null);
-            Account toAccount = accountService.findById(toAccountId).orElse(null);
-            if (fromAccount == null || toAccount == null)
-                return "redirect:/transactions/transfer?error=Invalid+Accounts";
-
-            // Debit from source account
-            Transaction debitTx = new Transaction();
-            debitTx.setAccount(fromAccount);
-            debitTx.setAmount(amount);
-            debitTx.setTransactionType("transfer");
-            debitTx.setTimestamp(LocalDateTime.now());
-            transactionService.save(debitTx);
-
-            // Credit to destination account (as a deposit)
-            Transaction creditTx = new Transaction();
-            creditTx.setAccount(toAccount);
-            creditTx.setAmount(amount);
-            creditTx.setTransactionType("deposit");
-            creditTx.setTimestamp(LocalDateTime.now());
-            transactionService.save(creditTx);
-
+            transactionService.transfer(fromAccountId, toAccountId, amount);
         } catch (RuntimeException e) {
             return "redirect:/transactions/transfer?error=" + e.getMessage();
         }
