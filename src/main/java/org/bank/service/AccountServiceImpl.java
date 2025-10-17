@@ -5,7 +5,9 @@ import org.bank.entities.Customer;
 import org.bank.entities.Transaction;
 import org.bank.repository.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -17,6 +19,7 @@ public class AccountServiceImpl implements AccountService {
 
     private final AccountRepository accountRepository;
     private final TransactionService transactionService;
+    private static final int MAX_RETRIES = 3;
 
     @Autowired
     public AccountServiceImpl(AccountRepository accountRepository,
@@ -55,81 +58,127 @@ public class AccountServiceImpl implements AccountService {
         return accountRepository.findByCustomer(customer);
     }
 
+    /**
+     * Deposit money into an account safely using optimistic locking and retries.
+     */
     @Override
+    @Transactional
     public void deposit(Long accountId, BigDecimal amount) {
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+        int attempts = 0;
+        while (true) {
+            try {
+                Account account = accountRepository.findById(accountId)
+                        .orElseThrow(() -> new RuntimeException("Account not found"));
 
-        account.setBalance(account.getBalance().add(amount));
-        accountRepository.save(account);
+                account.setBalance(account.getBalance().add(amount));
+                accountRepository.save(account);
 
-        // record transaction
-        Transaction transaction = new Transaction();
-        transaction.setAccount(account);
-        transaction.setTransactionType("DEPOSIT");
-        transaction.setAmount(BigDecimal.valueOf(amount.doubleValue()));
-        transaction.setTimestamp(LocalDateTime.now());
-        transaction.setStatus("SUCCESS");
-        transactionService.save(transaction);
+                // record transaction
+                Transaction transaction = new Transaction();
+                transaction.setAccount(account);
+                transaction.setTransactionType("DEPOSIT");
+                transaction.setAmount(amount);
+                transaction.setTimestamp(LocalDateTime.now());
+                transaction.setStatus("SUCCESS");
+                transactionService.save(transaction);
+                return;
+            } catch (OptimisticLockingFailureException | jakarta.persistence.OptimisticLockException e) {
+                attempts++;
+                if (attempts >= MAX_RETRIES) {
+                    throw new RuntimeException("Concurrent update failed after retries", e);
+                }
+            }
+        }
     }
 
+    /**
+     * Withdraw money safely with concurrency control.
+     */
     @Override
+    @Transactional
     public void withdraw(Long accountId, BigDecimal amount) {
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+        int attempts = 0;
+        while (true) {
+            try {
+                Account account = accountRepository.findById(accountId)
+                        .orElseThrow(() -> new RuntimeException("Account not found"));
 
-        if (account.getBalance().compareTo(amount) < 0) {
-            throw new RuntimeException("Insufficient balance");
+                if (account.getBalance().compareTo(amount) < 0) {
+                    throw new RuntimeException("Insufficient balance");
+                }
+
+                account.setBalance(account.getBalance().subtract(amount));
+                accountRepository.save(account);
+
+                // record transaction
+                Transaction transaction = new Transaction();
+                transaction.setAccount(account);
+                transaction.setTransactionType("WITHDRAW");
+                transaction.setAmount(amount);
+                transaction.setTimestamp(LocalDateTime.now());
+                transaction.setStatus("SUCCESS");
+                transactionService.save(transaction);
+                return;
+            } catch (OptimisticLockingFailureException | jakarta.persistence.OptimisticLockException e) {
+                attempts++;
+                if (attempts >= MAX_RETRIES) {
+                    throw new RuntimeException("Concurrent update failed after retries", e);
+                }
+            }
         }
-
-        account.setBalance(account.getBalance().subtract(amount));
-        accountRepository.save(account);
-
-        // record transaction
-        Transaction transaction = new Transaction();
-        transaction.setAccount(account);
-        transaction.setTransactionType("WITHDRAW");
-        transaction.setAmount(BigDecimal.valueOf(amount.doubleValue()));
-        transaction.setTimestamp(LocalDateTime.now());
-        transaction.setStatus("SUCCESS");
-        transactionService.save(transaction);
     }
 
+    /**
+     * Transfer money between two accounts atomically and safely.
+     * This method locks both accounts in a single transaction to avoid lost updates.
+     */
     @Override
+    @Transactional
     public void transfer(Long fromAccountId, Long toAccountId, BigDecimal amount) {
-        Account fromAccount = accountRepository.findById(fromAccountId)
-                .orElseThrow(() -> new RuntimeException("Sender account not found"));
+        int attempts = 0;
+        while (true) {
+            try {
+                Account fromAccount = accountRepository.findById(fromAccountId)
+                        .orElseThrow(() -> new RuntimeException("Sender account not found"));
 
-        Account toAccount = accountRepository.findById(toAccountId)
-                .orElseThrow(() -> new RuntimeException("Receiver account not found"));
+                Account toAccount = accountRepository.findById(toAccountId)
+                        .orElseThrow(() -> new RuntimeException("Receiver account not found"));
 
-        if (fromAccount.getBalance().compareTo(amount) < 0) {
-            throw new RuntimeException("Insufficient balance for transfer");
+                if (fromAccount.getBalance().compareTo(amount) < 0) {
+                    throw new RuntimeException("Insufficient balance for transfer");
+                }
+
+                // update balances
+                fromAccount.setBalance(fromAccount.getBalance().subtract(amount));
+                toAccount.setBalance(toAccount.getBalance().add(amount));
+
+                accountRepository.save(fromAccount);
+                accountRepository.save(toAccount);
+
+                // record debit transaction (sender)
+                Transaction debit = new Transaction();
+                debit.setAccount(fromAccount);
+                debit.setTransactionType("TRANSFER_SENT");
+                debit.setAmount(amount);
+                debit.setTimestamp(LocalDateTime.now());
+                debit.setStatus("SUCCESS");
+                transactionService.save(debit);
+
+                // record credit transaction (receiver)
+                Transaction credit = new Transaction();
+                credit.setAccount(toAccount);
+                credit.setTransactionType("TRANSFER_RECEIVED");
+                credit.setAmount(amount);
+                credit.setTimestamp(LocalDateTime.now());
+                credit.setStatus("SUCCESS");
+                transactionService.save(credit);
+                return;
+            } catch (OptimisticLockingFailureException | jakarta.persistence.OptimisticLockException e) {
+                attempts++;
+                if (attempts >= MAX_RETRIES) {
+                    throw new RuntimeException("Concurrent transfer failed after retries", e);
+                }
+            }
         }
-
-        // update balances
-        fromAccount.setBalance(fromAccount.getBalance().subtract(amount));
-        toAccount.setBalance(toAccount.getBalance().add(amount));
-
-        accountRepository.save(fromAccount);
-        accountRepository.save(toAccount);
-
-        // record debit transaction (sender)
-        Transaction debit = new Transaction();
-        debit.setAccount(fromAccount);
-        debit.setTransactionType("TRANSFER_SENT");
-        debit.setAmount(BigDecimal.valueOf(amount.doubleValue()));
-        debit.setTimestamp(LocalDateTime.now());
-        debit.setStatus("SUCCESS");
-        transactionService.save(debit);
-
-        // record credit transaction (receiver)
-        Transaction credit = new Transaction();
-        credit.setAccount(toAccount);
-        credit.setTransactionType("TRANSFER_RECEIVED");
-        credit.setAmount(BigDecimal.valueOf(amount.doubleValue()));
-        credit.setTimestamp(LocalDateTime.now());
-        credit.setStatus("SUCCESS");
-        transactionService.save(credit);
     }
 }
