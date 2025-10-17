@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Banking System - Transfer</title>
+
+    <!-- Google Fonts: Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet" />
+
+    <style>
+        body, html {
+          margin: 0;
+          height: 100%;
+          font-family: 'Poppins', sans-serif;
+          background-color: #121212;
+          color: #e0e0e0;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .container {
+          display: flex;
+          height: 100vh;
+          overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+          background: linear-gradient(180deg, #1e1e2f 0%, #14141f 100%);
+          width: 260px;
+          display: flex;
+          flex-direction: column;
+          padding: 20px 0;
+        }
+
+        .sidebar .logo {
+          color: #66ccb7;
+          font-weight: 700;
+          font-size: 1.6rem;
+          text-align: center;
+          margin-bottom: 2rem;
+          letter-spacing: 1.2px;
+        }
+
+        .nav-links {
+          flex-grow: 1;
+        }
+
+        .menu-item {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .nav-links a.main-link {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 15px 25px;
+          color: #bbb;
+          text-decoration: none;
+          font-weight: 500;
+          font-size: 1rem;
+          transition: color 0.25s ease, background 0.3s ease;
+          border-left: 4px solid transparent;
+          cursor: pointer;
+        }
+
+        .nav-links a.main-link:hover,
+        .nav-links a.main-link.active {
+          background-color: #253244;
+          color: #66ccb7;
+          border-left-color: #66ccb7;
+        }
+
+        .submenu {
+          display: none;
+          flex-direction: column;
+          background-color: #181b24;
+        }
+
+        .submenu a {
+          padding: 12px 50px;
+          color: #aaa;
+          text-decoration: none;
+          font-size: 0.95rem;
+          transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        .submenu a:hover {
+          background-color: #253244;
+          color: #66ccb7;
+        }
+
+        .menu-item.open .submenu {
+          display: flex;
+        }
+
+        .arrow {
+          font-size: 0.8rem;
+          margin-left: auto;
+        }
+
+        /* Logout link */
+        .logout-link {
+          display: block;
+          margin: 20px;
+          padding: 12px 20px;
+          background-color: #a83232;
+          color: white;
+          text-align: center;
+          border-radius: 6px;
+          text-decoration: none;
+          font-weight: 600;
+          transition: background-color 0.3s ease;
+        }
+
+        .logout-link:hover {
+          background-color: #cc4444;
+        }
+
+        /* Main content */
+        .main-content {
+          flex-grow: 1;
+          background: #181818;
+          display: flex;
+          flex-direction: column;
+          padding: 20px 30px;
+          overflow-y: auto;
+        }
+
+        /* Top bar */
+        .top-bar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding-bottom: 20px;
+          border-bottom: 1px solid #2c2c2c;
+          color: #ccc;
+        }
+
+        .top-bar h1 {
+          font-weight: 600;
+          font-size: 1.75rem;
+          color: #66ccb7;
+        }
+
+        .user-profile {
+          position: relative;
+          cursor: pointer;
+        }
+
+        .user-profile img {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          border: 2px solid #66ccb7;
+          object-fit: cover;
+          transition: border-color 0.3s ease;
+        }
+
+        .user-profile:hover img {
+          border-color: #3ea89d;
+        }
+
+        .dropdown-menu {
+          position: absolute;
+          right: 0;
+          top: 50px;
+          background: #222830;
+          border-radius: 8px;
+          box-shadow: 0 6px 15px rgba(0,0,0,0.5);
+          width: 150px;
+          display: none;
+          flex-direction: column;
+          z-index: 10;
+        }
+
+        .user-profile:focus-within .dropdown-menu,
+        .user-profile:hover .dropdown-menu {
+          display: flex;
+        }
+
+        .dropdown-menu a {
+          padding: 12px 20px;
+          color: #ccc;
+          text-decoration: none;
+          font-weight: 500;
+          transition: background-color 0.25s ease;
+        }
+
+        .dropdown-menu a:hover {
+          background-color: #3ea89d;
+          color: white;
+        }
+
+        /* Transfer form */
+        .form-section {
+          background: #222830;
+          border-radius: 12px;
+          padding: 25px 30px;
+          box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+          max-width: 500px;
+          margin: 40px auto;
+          color: #ddd;
+        }
+
+        form {
+          display: flex;
+          flex-direction: column;
+        }
+
+        label {
+          font-weight: 600;
+          margin-bottom: 8px;
+          color: #66ccb7;
+        }
+
+        select, input[type="number"] {
+          padding: 12px 15px;
+          border-radius: 8px;
+          border: none;
+          background-color: #1b1f27;
+          color: #eee;
+          font-size: 1rem;
+          margin-bottom: 20px;
+          outline: none;
+          transition: box-shadow 0.3s ease;
+          -moz-appearance: textfield;
+          -webkit-appearance: none;
+          appearance: none;
+        }
+
+        /* Remove arrows on number input */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+
+        select:focus, input[type="number"]:focus {
+          box-shadow: 0 0 10px 2px rgba(102, 170, 255, 0.5);
+          color: white;
+        }
+
+        /* Remove blue background on selected option */
+        select option:checked {
+          background-color: transparent !important;
+          color: #eee;
+        }
+
+        button {
+          background: #3ea89d;
+          border: none;
+          color: white;
+          padding: 14px 0;
+          border-radius: 8px;
+          font-size: 1.1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+          background: #66ccb7;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+          .form-section {
+            margin: 20px 15px;
+            padding: 20px;
+          }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar">
+        <div class="logo">BankSys</div>
+        <div class="nav-links">
+            <!-- Dashboard -->
+            <div class="menu-item">
+                <a th:href="@{/dashboard}" class="main-link">Dashboard</a>
+            </div>
+
+            <!-- Accounts -->
+            <div class="menu-item">
+                <a href="#" class="main-link">Accounts <span class="arrow">▶</span></a>
+                <div class="submenu">
+                    <a th:href="@{/accounts/savings}">Savings Account</a>
+                    <a th:href="@{/accounts/current}">Current Account</a>
+                    <a th:href="@{/accounts/balance}">View Balance</a>
+                    <a th:href="@{/accounts/open}">Open Account</a>
+                </div>
+            </div>
+
+            <!-- Transactions -->
+            <div class="menu-item">
+                <a href="#" class="main-link">Transactions <span class="arrow">▶</span></a>
+                <div class="submenu">
+                    <a th:href="@{/transactions/deposit}">Deposit</a>
+                    <a th:href="@{/transactions/withdraw}">Withdraw</a>
+                    <a th:href="@{/transactions/transfer}" class="active">Transfer</a>
+                    <a th:href="@{/transactions/transactionhistory}">Transaction History</a>
+                </div>
+            </div>
+
+            <!-- Profile -->
+            <div class="menu-item">
+                <a href="#" class="main-link">Profile <span class="arrow">▶</span></a>
+                <div class="submenu">
+                    <a th:href="@{/customers/profile}">Update Profile</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logout (separate, red) -->
+        <a th:href="@{/logout}" class="logout-link">Logout</a>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content" role="main">
+        <div class="top-bar">
+            <h1>Transfer Money</h1>
+            <div class="user-profile" tabindex="0" aria-label="User profile menu">
+                <img src="https://ui-avatars.com/api/?name="
+                     th:src="'https://ui-avatars.com/api/?name=' + ${user.username}"
+                     alt="User Avatar" />
+                <div class="dropdown-menu" role="menu" aria-hidden="true">
+                    <a th:href="@{/profile}">Profile</a>
+                    <a th:href="@{/logout}">Logout</a>
+                </div>
+            </div>
+        </div>
+
+        <section class="form-section">
+            <form th:action="@{/transactions/transfer}" method="post">
+                <!-- Source Account -->
+                <label for="fromAccount">From Account:</label>
+                <select id="fromAccount" name="fromAccountId" required>
+                    <option value="">-- Select Source Account --</option>
+                    <option th:each="acc : ${accounts}"
+                            th:value="${acc.accountId}"
+                            th:text="${acc.accountType + ' - ' + acc.accountId + ' (Balance: ' + acc.balance + ')'}">
+                    </option>
+                </select>
+
+                <!-- Destination Account -->
+                <label for="toAccount">To Account:</label>
+                <select id="toAccount" name="toAccountId" required>
+                    <option value="">-- Select Destination Account --</option>
+                    <option th:each="acc : ${allAccounts}"
+                            th:value="${acc.accountId}"
+                            th:text="${acc.accountType + ' - ' + acc.accountId}">
+                    </option>
+                </select>
+
+                <!-- Amount -->
+                <label for="amount">Amount:</label>
+                <input type="number" id="amount" step="0.01" name="amount" required />
+
+                <button type="submit">Transfer</button>
+            </form>
+        </section>
+    </main>
+</div>
+<script>
+    document.querySelectorAll('.menu-item .main-link').forEach(link => {
+      link.addEventListener('click', function(e) {
+        if(this.nextElementSibling && this.nextElementSibling.classList.contains('submenu')) {
+          e.preventDefault();
+          this.parentElement.classList.toggle('open');
+        }
+      });
+    });
+</script>
+</body>
+</html>
