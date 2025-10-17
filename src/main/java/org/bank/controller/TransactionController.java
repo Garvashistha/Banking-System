@@ -18,6 +18,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/transactions")
@@ -84,7 +85,7 @@ public class TransactionController {
         if (user == null) return "redirect:/login";
 
         try {
-            Account account = accountService.findById(accountId);
+            Account account = accountService.findById(accountId).orElse(null);
             if (account == null) return "redirect:/transactions/deposit?error=Invalid+Account";
 
             // Create transaction record
@@ -126,7 +127,7 @@ public class TransactionController {
         if (user == null) return "redirect:/login";
 
         try {
-            Account account = accountService.findById(accountId);
+            Account account = accountService.findById(accountId).orElse(null);
             if (account == null) return "redirect:/transactions/withdraw?error=Invalid+Account";
 
             Transaction transaction = new Transaction();
@@ -174,8 +175,8 @@ public class TransactionController {
         }
 
         try {
-            Account fromAccount = accountService.findById(fromAccountId);
-            Account toAccount = accountService.findById(toAccountId);
+            Account fromAccount = accountService.findById(fromAccountId).orElse(null);
+            Account toAccount = accountService.findById(toAccountId).orElse(null);
             if (fromAccount == null || toAccount == null)
                 return "redirect:/transactions/transfer?error=Invalid+Accounts";
 
