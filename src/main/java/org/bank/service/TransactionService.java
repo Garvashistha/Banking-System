@@ -52,7 +52,9 @@ public class TransactionService {
 
                 BigDecimal balance = account.getBalance() != null ? account.getBalance() : BigDecimal.ZERO;
                 account.setBalance(balance.add(amount));
-                accountRepository.save(account);
+
+                // ensure immediate flush of account update so DB reflects new balance within this tx
+                accountRepository.saveAndFlush(account);
 
                 Transaction tx = new Transaction();
                 tx.setAccount(account);
@@ -83,7 +85,9 @@ public class TransactionService {
                     throw new IllegalStateException("Insufficient balance for withdrawal");
                 }
                 account.setBalance(balance.subtract(amount));
-                accountRepository.save(account);
+
+                // ensure immediate flush of account update
+                accountRepository.saveAndFlush(account);
 
                 Transaction tx = new Transaction();
                 tx.setAccount(account);
@@ -131,8 +135,10 @@ public class TransactionService {
                 fromAccount.setBalance(fromBalance.subtract(amount));
                 BigDecimal toBalance = toAccount.getBalance() != null ? toAccount.getBalance() : BigDecimal.ZERO;
                 toAccount.setBalance(toBalance.add(amount));
-                accountRepository.save(fromAccount);
-                accountRepository.save(toAccount);
+
+                // flush both account updates immediately
+                accountRepository.saveAndFlush(fromAccount);
+                accountRepository.saveAndFlush(toAccount);
 
                 // create transaction records
                 Transaction debitTx = new Transaction();
