@@ -18,7 +18,6 @@ import java.util.Optional;
 
 /**
  * TransactionService with concurrency control and BigDecimal-safe arithmetic.
- *
  * Notes:
  * - Uses optimistic locking on Account (requires @Version in Account entity).
  * - Updates Account balance inside a @Transactional method and saves the Transaction.
