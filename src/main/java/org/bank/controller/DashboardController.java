@@ -11,12 +11,12 @@ import org.bank.service.TransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 
 @Controller
@@ -39,6 +39,7 @@ public class DashboardController {
     }
 
     @GetMapping("/dashboard")
+    @Transactional(readOnly = true)
     public String showDashboard(Model model, Authentication authentication, HttpServletRequest request) {
 
         if (authentication == null || !authentication.isAuthenticated()
@@ -47,7 +48,6 @@ public class DashboardController {
         }
 
         String username = authentication.getName();
-
         User user = authService.findByUsername(username).orElse(null);
         if (user == null) {
             return "redirect:/login";
@@ -55,23 +55,28 @@ public class DashboardController {
 
         // 🔹 Load customer
         Customer customer = customerService.findByUser(user).orElse(null);
-
-        // 🔹 Load accounts
-        List<Account> accounts = new ArrayList<>();
-        if (customer != null) {
-            accounts = accountService.findByCustomer(customer);
-            // Force refresh of each account from DB to ensure latest balance
-            for (int i = 0; i < accounts.size(); i++) {
-                Long accId = accounts.get(i).getAccountId();
-                accounts.set(i, accountService.findById(accId));
-            }
+        if (customer == null) {
+            model.addAttribute("user", user);
+            model.addAttribute("accounts", List.of());
+            model.addAttribute("transactions", List.of());
+            model.addAttribute("totalAccounts", 0);
+            model.addAttribute("totalBalance", BigDecimal.ZERO);
+            return "dashboard";
         }
 
+        // 🔹 Always reload accounts directly from DB to get latest balances
+        List<Account> accounts = accountService.findByCustomer(customer)
+                .stream()
+                .map(a -> accountService.findById(a.getAccountId()))
+                .toList();
 
-        // 🔹 Load transactions
-        List<Transaction> transactions = (customer != null)
-                ? transactionService.findByCustomer(customer)
-                : List.of();
+        // 🔹 Load recent transactions freshly
+        List<Transaction> transactions = transactionService.findByCustomer(customer);
+
+        System.out.println("=== Dashboard account balances ===");
+        for (Account acc : accounts) {
+            System.out.println("Account " + acc.getAccountId() + " → Balance: " + acc.getBalance());
+        }
 
         // 🔹 Quick stats
         int totalAccounts = accounts.size();
@@ -86,7 +91,7 @@ public class DashboardController {
         model.addAttribute("transactions", transactions);
         model.addAttribute("totalAccounts", totalAccounts);
         model.addAttribute("totalBalance", totalBalance);
-        model.addAttribute("activePage", "dashboard"); // sidebar highlight
+        model.addAttribute("activePage", "dashboard");
         model.addAttribute("requestURI", request.getRequestURI());
 
         return "dashboard";

@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.bank.entities.Account;
+import org.bank.entities.Customer;
 import org.bank.entities.Transaction;
 import org.bank.repository.AccountRepository;
 import org.bank.repository.TransactionRepository;
@@ -180,4 +181,9 @@ public class TransactionService {
             Thread.currentThread().interrupt();
         }
     }
+    public List<Transaction> findByCustomer(Customer customer) {
+        return transactionRepository.findByAccountCustomerOrderByTimestampDesc(customer);
+    }
+
+
 }
