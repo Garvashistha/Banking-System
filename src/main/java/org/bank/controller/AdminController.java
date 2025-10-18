@@ -120,9 +120,11 @@ public class AdminController {
 
     @GetMapping("/accounts/edit/{id}")
     public String showEditAccountForm(@PathVariable Long id, Model model) {
-        Account account = accountService.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid account Id:" + id));
-        model.addAttribute("account", account);
+        Account account = accountService.findById(id);
+        if (account == null) {
+            throw new IllegalArgumentException("Invalid account Id: " + id);
+        }
+
         return "account_form"; // remove admin/ prefix
     }
 

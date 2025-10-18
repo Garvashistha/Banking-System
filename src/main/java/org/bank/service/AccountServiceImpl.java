@@ -34,9 +34,11 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public Optional<Account> findById(Long id) {
-        return accountRepository.findById(id);
+    public Account findById(Long id) {
+        return accountRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Account not found"));
     }
+
     @Override
     public Account save(Account account) {
         return accountRepository.save(account);
@@ -109,6 +111,7 @@ public class AccountServiceImpl implements AccountService {
 
                 account.setBalance(account.getBalance().subtract(amount));
                 accountRepository.save(account);
+
 
                 // record transaction
                 Transaction transaction = new Transaction();

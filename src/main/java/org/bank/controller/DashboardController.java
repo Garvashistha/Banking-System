@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 @Controller
@@ -56,9 +57,16 @@ public class DashboardController {
         Customer customer = customerService.findByUser(user).orElse(null);
 
         // 🔹 Load accounts
-        List<Account> accounts = (customer != null)
-                ? accountService.findByCustomer(customer)
-                : List.of();
+        List<Account> accounts = new ArrayList<>();
+        if (customer != null) {
+            accounts = accountService.findByCustomer(customer);
+            // Force refresh of each account from DB to ensure latest balance
+            for (int i = 0; i < accounts.size(); i++) {
+                Long accId = accounts.get(i).getAccountId();
+                accounts.set(i, accountService.findById(accId));
+            }
+        }
+
 
         // 🔹 Load transactions
         List<Transaction> transactions = (customer != null)
