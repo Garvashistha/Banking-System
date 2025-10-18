@@ -1,9 +1,5 @@
 package org.bank.service;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
-
 import org.bank.entities.Account;
 import org.bank.entities.Customer;
 import org.bank.entities.Transaction;
@@ -15,38 +11,39 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
 @Service
-public class TransactionService {
+@Transactional(isolation = Isolation.READ_COMMITTED)
+public class BankTransactionService {
 
     private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
     private static final int MAX_RETRIES = 3;
 
     @Autowired
-    public TransactionService(TransactionRepository transactionRepository,
-                              AccountRepository accountRepository) {
+    public BankTransactionService(TransactionRepository transactionRepository,
+                                  AccountRepository accountRepository) {
         this.transactionRepository = transactionRepository;
         this.accountRepository = accountRepository;
     }
 
     // ================== BASIC FINDS ==================
+    @Transactional(readOnly = true)
     public List<Transaction> findAll() {
         return transactionRepository.findAll();
     }
 
-    public Transaction save(Transaction transaction) {
-        if (transaction.getTimestamp() == null) {
-            transaction.setTimestamp(LocalDateTime.now());
-        }
-        return transactionRepository.save(transaction);
-    }
-
-    public void deleteById(Long id) {
-        transactionRepository.deleteById(id);
-    }
-
+    @Transactional(readOnly = true)
     public List<Transaction> findByAccountId(Long accountId) {
         return transactionRepository.findByAccountAccountIdOrderByTimestampDesc(accountId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Transaction> findByCustomer(Customer customer) {
+        return transactionRepository.findByAccountCustomerOrderByTimestampDesc(customer);
     }
 
     // ================== DEPOSIT ==================
@@ -54,24 +51,30 @@ public class TransactionService {
     public Transaction deposit(Long accountId, BigDecimal amount) {
         validateAmount(amount);
         int attempts = 0;
+
         while (true) {
             try {
-                Account acct = accountRepository.findById(accountId)
+                Account account = accountRepository.findById(accountId)
                         .orElseThrow(() -> new IllegalArgumentException("Account not found: " + accountId));
 
-                BigDecimal balance = acct.getBalance() != null ? acct.getBalance() : BigDecimal.ZERO;
-                acct.setBalance(balance.add(amount));
+                BigDecimal currentBalance = account.getBalance() == null ? BigDecimal.ZERO : account.getBalance();
+                account.setBalance(currentBalance.add(amount));
 
-                accountRepository.saveAndFlush(acct);
+                accountRepository.saveAndFlush(account); // ✅ persist account change immediately
 
                 Transaction tx = new Transaction();
-                tx.setAccount(acct);
+                tx.setAccount(account);
+                tx.setTransactionType("DEPOSIT");
                 tx.setAmount(amount);
-                tx.setTransactionType("deposit");
                 tx.setTimestamp(LocalDateTime.now());
-                return transactionRepository.save(tx);
-            } catch (OptimisticLockingFailureException | jakarta.persistence.OptimisticLockException ex) {
-                if (++attempts >= MAX_RETRIES) throw ex;
+                tx.setStatus("SUCCESS");
+
+                transactionRepository.saveAndFlush(tx); // ✅ persist transaction immediately
+                System.out.println("✅ Deposit successful: Account " + accountId + " new balance = " + account.getBalance());
+                return tx;
+
+            } catch (OptimisticLockingFailureException | jakarta.persistence.OptimisticLockException e) {
+                if (++attempts >= MAX_RETRIES) throw new RuntimeException("Concurrent deposit failed after retries", e);
                 sleepBeforeRetry(attempts);
             }
         }
@@ -82,27 +85,33 @@ public class TransactionService {
     public Transaction withdraw(Long accountId, BigDecimal amount) {
         validateAmount(amount);
         int attempts = 0;
+
         while (true) {
             try {
-                Account acct = accountRepository.findById(accountId)
+                Account account = accountRepository.findById(accountId)
                         .orElseThrow(() -> new IllegalArgumentException("Account not found: " + accountId));
 
-                BigDecimal balance = acct.getBalance() != null ? acct.getBalance() : BigDecimal.ZERO;
-                if (balance.compareTo(amount) < 0) {
+                BigDecimal currentBalance = account.getBalance() == null ? BigDecimal.ZERO : account.getBalance();
+                if (currentBalance.compareTo(amount) < 0) {
                     throw new IllegalStateException("Insufficient balance for withdrawal");
                 }
 
-                acct.setBalance(balance.subtract(amount));
-                accountRepository.saveAndFlush(acct);
+                account.setBalance(currentBalance.subtract(amount));
+                accountRepository.saveAndFlush(account);
 
                 Transaction tx = new Transaction();
-                tx.setAccount(acct);
+                tx.setAccount(account);
+                tx.setTransactionType("WITHDRAW");
                 tx.setAmount(amount);
-                tx.setTransactionType("withdraw");
                 tx.setTimestamp(LocalDateTime.now());
-                return transactionRepository.save(tx);
-            } catch (OptimisticLockingFailureException | jakarta.persistence.OptimisticLockException ex) {
-                if (++attempts >= MAX_RETRIES) throw ex;
+                tx.setStatus("SUCCESS");
+
+                transactionRepository.saveAndFlush(tx);
+                System.out.println("✅ Withdrawal successful: Account " + accountId + " new balance = " + account.getBalance());
+                return tx;
+
+            } catch (OptimisticLockingFailureException | jakarta.persistence.OptimisticLockException e) {
+                if (++attempts >= MAX_RETRIES) throw new RuntimeException("Concurrent withdrawal failed after retries", e);
                 sleepBeforeRetry(attempts);
             }
         }
@@ -117,42 +126,48 @@ public class TransactionService {
         }
 
         int attempts = 0;
+
         while (true) {
             try {
-                Account fromAcct = accountRepository.findById(fromAccountId)
+                Account fromAccount = accountRepository.findById(fromAccountId)
                         .orElseThrow(() -> new IllegalArgumentException("Source account not found: " + fromAccountId));
-                Account toAcct = accountRepository.findById(toAccountId)
+                Account toAccount = accountRepository.findById(toAccountId)
                         .orElseThrow(() -> new IllegalArgumentException("Destination account not found: " + toAccountId));
 
-                BigDecimal fromBal = fromAcct.getBalance() != null ? fromAcct.getBalance() : BigDecimal.ZERO;
+                BigDecimal fromBal = fromAccount.getBalance() == null ? BigDecimal.ZERO : fromAccount.getBalance();
                 if (fromBal.compareTo(amount) < 0) {
                     throw new IllegalStateException("Insufficient balance for transfer");
                 }
 
-                fromAcct.setBalance(fromBal.subtract(amount));
-                BigDecimal toBal = toAcct.getBalance() != null ? toAcct.getBalance() : BigDecimal.ZERO;
-                toAcct.setBalance(toBal.add(amount));
+                fromAccount.setBalance(fromBal.subtract(amount));
+                toAccount.setBalance(toAccount.getBalance() == null ? amount : toAccount.getBalance().add(amount));
 
-                accountRepository.saveAndFlush(fromAcct);
-                accountRepository.saveAndFlush(toAcct);
+                accountRepository.saveAndFlush(fromAccount);
+                accountRepository.saveAndFlush(toAccount);
 
                 Transaction debit = new Transaction();
-                debit.setAccount(fromAcct);
+                debit.setAccount(fromAccount);
+                debit.setTransactionType("TRANSFER_SENT");
                 debit.setAmount(amount);
-                debit.setTransactionType("transfer-out");
                 debit.setTimestamp(LocalDateTime.now());
-                transactionRepository.save(debit);
+                debit.setStatus("SUCCESS");
 
                 Transaction credit = new Transaction();
-                credit.setAccount(toAcct);
+                credit.setAccount(toAccount);
+                credit.setTransactionType("TRANSFER_RECEIVED");
                 credit.setAmount(amount);
-                credit.setTransactionType("transfer-in");
                 credit.setTimestamp(LocalDateTime.now());
-                transactionRepository.save(credit);
+                credit.setStatus("SUCCESS");
 
+                transactionRepository.saveAndFlush(debit);
+                transactionRepository.saveAndFlush(credit);
+
+                System.out.println("✅ Transfer successful: " +
+                        fromAccountId + " → " + toAccountId + " | Amount: " + amount);
                 return;
-            } catch (OptimisticLockingFailureException | jakarta.persistence.OptimisticLockException ex) {
-                if (++attempts >= MAX_RETRIES) throw ex;
+
+            } catch (OptimisticLockingFailureException | jakarta.persistence.OptimisticLockException e) {
+                if (++attempts >= MAX_RETRIES) throw new RuntimeException("Concurrent transfer failed after retries", e);
                 sleepBeforeRetry(attempts);
             }
         }
@@ -164,7 +179,7 @@ public class TransactionService {
         if (transaction.getTimestamp() == null) {
             transaction.setTimestamp(LocalDateTime.now());
         }
-        return transactionRepository.save(transaction);
+        return transactionRepository.saveAndFlush(transaction);
     }
 
     // ================== HELPERS ==================
@@ -181,9 +196,4 @@ public class TransactionService {
             Thread.currentThread().interrupt();
         }
     }
-    public List<Transaction> findByCustomer(Customer customer) {
-        return transactionRepository.findByAccountCustomerOrderByTimestampDesc(customer);
-    }
-
-
 }

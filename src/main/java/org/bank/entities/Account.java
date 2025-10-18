@@ -30,5 +30,6 @@ public class Account {
     private BigDecimal balance;
 
     @Version
-    private Long version;
+    @Column(nullable = false)
+    private Long version = 0L;
 }

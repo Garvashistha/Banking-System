@@ -7,7 +7,7 @@ import org.bank.entities.Transaction;
 import org.bank.service.CustomerService;
 import org.bank.service.AuthService;
 import org.bank.service.AccountService;
-import org.bank.service.TransactionService;
+import org.bank.service.BankTransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -24,13 +24,13 @@ public class AdminController {
     private final CustomerService customerService;
     private final AuthService authService;
     private final AccountService accountService;
-    private final TransactionService transactionService;
+    private final BankTransactionService transactionService;
 
     @Autowired
     public AdminController(CustomerService customerService,
                            AuthService authService,
                            AccountService accountService,
-                           TransactionService transactionService) {
+                           BankTransactionService transactionService) {
         this.customerService = customerService;
         this.authService = authService;
         this.accountService = accountService;

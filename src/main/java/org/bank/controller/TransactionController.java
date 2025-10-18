@@ -6,7 +6,7 @@ import org.bank.entities.User;
 import org.bank.service.AccountService;
 import org.bank.service.AuthService;
 import org.bank.service.CustomerService;
-import org.bank.service.TransactionService;
+import org.bank.service.BankTransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -21,13 +21,13 @@ import java.util.List;
 @RequestMapping("/transactions")
 public class TransactionController {
 
-    private final TransactionService transactionService;
+    private final BankTransactionService transactionService;
     private final AuthService authService;
     private final AccountService accountService;
     private final CustomerService customerService;
 
     @Autowired
-    public TransactionController(TransactionService transactionService,
+    public TransactionController(BankTransactionService transactionService,
                                  AuthService authService,
                                  AccountService accountService,
                                  CustomerService customerService) {

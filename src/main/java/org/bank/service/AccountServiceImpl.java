@@ -13,11 +13,11 @@ import java.util.List;
 public class AccountServiceImpl implements AccountService {
 
     private final AccountRepository accountRepository;
-    private final TransactionService transactionService;
+    private final BankTransactionService transactionService;
 
     @Autowired
     public AccountServiceImpl(AccountRepository accountRepository,
-                              TransactionService transactionService) {
+                              BankTransactionService transactionService) {
         this.accountRepository = accountRepository;
         this.transactionService = transactionService;
     }
