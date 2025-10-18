@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Open Account</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet" />
+
     <style>
         *, *::before, *::after { box-sizing: border-box; }
         body, html {
@@ -15,7 +16,6 @@
 
         .container { display: flex; height: 100vh; overflow: hidden; }
 
-        /* Sidebar (copied from dashboard) */
         .sidebar {
             background: linear-gradient(180deg, #1e1e2f 0%, #14141f 100%);
             width: 260px; display: flex; flex-direction: column; padding: 20px 0;
@@ -26,90 +26,111 @@
         }
 
         .nav-links { flex-grow: 1; }
-        .menu-item { display: flex; flex-direction: column; }
+        .nav-links .menu-item { display: flex; flex-direction: column; }
+
         .nav-links a.main-link {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 15px 25px; color: #bbb; text-decoration: none; font-weight: 500;
-            border-left: 4px solid transparent; transition: all 0.3s ease;
+            padding: 15px 25px;
+            color: #bbb; text-decoration: none; font-weight: 500; font-size: 1rem;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent; cursor: pointer;
         }
         .nav-links a.main-link:hover,
         .nav-links a.main-link.active-link {
             background: #253244; color: #66ccb7; border-left-color: #66ccb7;
+            box-shadow: inset 2px 0 0 #66ccb7;
         }
+
         .arrow { transition: transform 0.3s ease; }
         .menu-item.open .arrow { transform: rotate(90deg); }
 
         .submenu {
-            max-height: 0; overflow: hidden; background: #181a25;
+            max-height: 0; overflow: hidden;
+            background: #181a25;
             transition: max-height 0.4s ease, padding 0.3s ease;
-            display: flex; flex-direction: column; border-left: 2px solid #253244;
+            display: flex; flex-direction: column;
+            border-left: 2px solid #253244;
         }
-        .menu-item.open .submenu { max-height: 500px; padding: 5px 0; }
+        .menu-item.open .submenu {
+            max-height: 500px; padding: 5px 0;
+        }
         .submenu a {
-            padding: 12px 45px; color: #aaa; text-decoration: none; font-size: 0.9rem;
+            padding: 12px 45px;
+            color: #aaa; text-decoration: none; font-size: 0.9rem;
             transition: all 0.25s ease; position: relative;
         }
-        .submenu a:hover { background: #2a3445; color: #66ccb7; }
-        .submenu a.active-sub { background: #222c3a; color: #66ccb7; font-weight: 600; border-radius: 6px; }
+        .submenu a:hover {
+            background: #2a3445; color: #66ccb7;
+        }
 
         .logout-link {
-            margin-top: auto; padding: 15px 25px;
-            color: #f55; text-decoration: none; font-weight: 600;
-            border-top: 1px solid #333; transition: background 0.3s ease, color 0.3s ease;
+            margin-top: auto;
+            padding: 15px 25px;
+            color: #f55; text-decoration: none; font-weight: 600; font-size: 1rem;
+            transition: background 0.3s ease, color 0.3s ease;
+            border-top: 1px solid #333;
         }
         .logout-link:hover { background: #2a1e1e; color: #ff6b6b; }
 
-        /* Main content */
         .main-content {
-            flex-grow: 1; background: #181818; display: flex; flex-direction: column;
-            padding: 20px 30px; overflow-y: auto;
+            flex-grow: 1;
+            background: #181818;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 30px;
+            overflow-y: auto;
         }
 
-        /* Top bar */
         .top-bar {
             display: flex; justify-content: space-between; align-items: center;
-            padding-bottom: 10px; border-bottom: 1px solid #2c2c2c;
+            padding-bottom: 10px; border-bottom: 1px solid #2c2c2c; color: #ccc;
         }
-        .top-bar h1 { color: #66ccb7; margin: 0; font-size: 1.6rem; }
+        .top-bar h1 { font-weight: 600; font-size: 1.75rem; color: #66ccb7; margin: 0; }
+        .top-bar p { font-weight: 500; font-size: 1rem; color: #ccc; margin: 5px 0 0 0; }
 
+        .user-profile { position: relative; cursor: pointer; }
         .user-profile img {
             width: 40px; height: 40px; border-radius: 50%;
             border: 2px solid #66ccb7; object-fit: cover;
         }
+        .dropdown-menu {
+            position: absolute; right: 0; top: 50px; background: #222830;
+            border-radius: 8px; box-shadow: 0 6px 15px rgba(0,0,0,0.5);
+            width: 150px; display: none; flex-direction: column; z-index: 10;
+        }
+        .user-profile:hover .dropdown-menu { display: flex; }
+        .dropdown-menu a {
+            padding: 12px 20px; color: #ccc; text-decoration: none; font-weight: 500;
+            transition: background-color 0.25s ease;
+        }
+        .dropdown-menu a:hover { background-color: #3ea89d; color: white; }
 
-        /* Form card (centered panel) */
-        .card {
-            background: #222830;
-            padding: 40px 30px;
-            border-radius: 12px;
-            box-shadow: 0 6px 15px rgba(0,0,0,0.5);
-            max-width: 480px;
-            margin: 40px auto;
+        .section {
+            margin-top: 25px; background: #222830; border-radius: 12px;
+            padding: 20px 25px; box-shadow: 0 6px 15px rgba(0,0,0,0.3);
         }
-        h2 {
-            text-align: center;
-            margin-bottom: 25px;
-            color: #66ccb7;
-            font-weight: 600;
-        }
+        .section h2 { margin-top: 0; font-weight: 600; color: #66ccb7; margin-bottom: 20px; }
+
         form { display: flex; flex-direction: column; text-align: left; }
-        label { margin-bottom: 6px; color: #bbb; font-size: 0.95rem; }
+        label { margin-bottom: 6px; font-size: 0.95rem; color: #bbb; }
         input, select {
-            padding: 12px 15px; margin-bottom: 20px; border: none; border-radius: 8px;
-            background-color: #2c2c2c; color: #eee; font-size: 1rem; outline: none;
+            padding: 12px 15px; margin-bottom: 20px;
+            border: none; border-radius: 8px;
+            background-color: #2c2c2c; color: #eee;
+            font-size: 1rem; outline: none;
         }
         input[readonly] { background-color: #333; color: #aaa; cursor: not-allowed; }
         button {
-            background-color: #3ea89d;
-            border: none; color: white; padding: 14px 0;
-            border-radius: 8px; font-size: 1.1rem; font-weight: 600;
-            cursor: pointer; transition: background-color 0.25s ease;
+            background-color: #3ea89d; border: none; color: white;
+            padding: 14px 0; border-radius: 8px; font-size: 1.1rem;
+            font-weight: 600; cursor: pointer; transition: background-color 0.25s ease;
         }
         button:hover { background-color: #66ccb7; }
 
         @media (max-width: 900px) {
             .container { flex-direction: column; }
             .sidebar { width: 100%; flex-direction: row; overflow-x: auto; }
+            .main-content { padding: 15px 20px; }
         }
     </style>
 </head>
@@ -119,18 +140,18 @@
     <nav class="sidebar">
         <div class="logo">BankSys</div>
         <div class="nav-links">
+            <div class="menu-item"><a th:href="@{/dashboard}" class="main-link">Dashboard</a></div>
+
             <div class="menu-item">
-                <a th:href="@{/dashboard}" class="main-link">Dashboard</a>
-            </div>
-            <div class="menu-item open">
-                <a class="main-link active-link">Accounts <span class="arrow">▶</span></a>
+                <a class="main-link">Accounts <span class="arrow">▶</span></a>
                 <div class="submenu">
                     <a th:href="@{/accounts/savings}">Savings Account</a>
                     <a th:href="@{/accounts/current}">Current Account</a>
                     <a th:href="@{/accounts/balance}">View Balance</a>
-                    <a th:href="@{/accounts/open}" class="active-sub">Open Account</a>
+                    <a th:href="@{/accounts/open}">Open Account</a>
                 </div>
             </div>
+
             <div class="menu-item">
                 <a class="main-link">Transactions <span class="arrow">▶</span></a>
                 <div class="submenu">
@@ -140,6 +161,7 @@
                     <a th:href="@{/transactions/transactionhistory}">Transaction History</a>
                 </div>
             </div>
+
             <div class="menu-item">
                 <a class="main-link">Profile <span class="arrow">▶</span></a>
                 <div class="submenu">
@@ -153,14 +175,21 @@
     <!-- Main -->
     <main class="main-content">
         <div class="top-bar">
-            <h1>Open New Account</h1>
-            <div class="user-profile">
-                <img th:alt="${customer != null ? customer.name : user.username}"
-                     th:src="${customer != null ? 'https://ui-avatars.com/api/?name=' + customer.name : 'https://ui-avatars.com/api/?name=' + user.username}" />
+            <h1>Open Account</h1>
+            <p>WELCOME</p>
+            <div class="user-profile" tabindex="0">
+                <!-- Safe fallback for user/customer -->
+                <img th:src="${(customer != null and customer.name != null) ? 'https://ui-avatars.com/api/?name=' + customer.name :
+                               (user != null and user.username != null) ? 'https://ui-avatars.com/api/?name=' + user.username :
+                               'https://ui-avatars.com/api/?name=User'}" alt="User Avatar" />
+                <div class="dropdown-menu">
+                    <a th:href="@{/profile/update}">Profile</a>
+                    <a th:href="@{/logout}">Logout</a>
+                </div>
             </div>
         </div>
 
-        <div class="card">
+        <section class="section">
             <h2>Open Your Account</h2>
             <form th:action="@{/accounts/open}" method="post" th:object="${account}">
                 <label for="accountId">Account ID</label>
@@ -178,14 +207,14 @@
 
                 <button type="submit">Open Account</button>
             </form>
-        </div>
+        </section>
     </main>
 </div>
 
 <script>
     document.querySelectorAll('.menu-item .main-link').forEach(link => {
         link.addEventListener('click', function(e) {
-            if(this.nextElementSibling && this.nextElementSibling.classList.contains('submenu')) {
+            if (this.nextElementSibling && this.nextElementSibling.classList.contains('submenu')) {
                 e.preventDefault();
                 this.parentElement.classList.toggle('open');
             }
