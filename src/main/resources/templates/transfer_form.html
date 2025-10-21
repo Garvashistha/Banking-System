@@ -9,7 +9,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet" />
 
     <style>
-        /* same theme & sidebar CSS as dashboard */
         *, *::before, *::after { box-sizing: border-box; }
         body, html { margin: 0; height: 100%; font-family: 'Poppins', sans-serif; background: #121212; color: #e0e0e0; }
         .container { display:flex; height:100vh; overflow:hidden; }
@@ -46,14 +45,37 @@
         button:hover { background:#66ccb7; }
 
         @media (max-width: 900px) {
-            .container { flex-direction: column; }
-            .sidebar { width: 100%; flex-direction: row; overflow-x: auto; }
-            .nav-links a.main-link { flex-direction: column; padding: 10px 15px; font-size: 0.85rem; }
-            .main-content { padding: 15px 20px; }
+          .container { flex-direction: column; }
+          .sidebar { width: 100%; flex-direction: row; overflow-x: auto; }
+          .nav-links a.main-link { flex-direction: column; padding: 10px 15px; font-size: 0.85rem; }
+          .main-content { padding: 15px 20px; }
         }
+
+        /* --- Stylish popup --- */
+        #popup-message {
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: #ff4c4c;
+          color: white;
+          padding: 14px 22px;
+          border-radius: 12px;
+          font-weight: 600;
+          box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+          opacity: 0;
+          transform: translateY(-10px);
+          transition: all 0.5s ease;
+          z-index: 9999;
+        }
+        #popup-message.show { opacity: 1; transform: translateY(0); }
+        #popup-message.success { background: #4CAF50; }
+        #popup-message.error { background: #f44336; }
     </style>
 </head>
 <body>
+<!-- Stylish popup -->
+<div id="popup-message"></div>
+
 <div class="container">
     <nav class="sidebar">
         <div class="logo">BankSys</div>
@@ -89,7 +111,6 @@
                 </div>
             </div>
         </div>
-
         <a th:href="@{/logout}" class="logout-link">Logout</a>
     </nav>
 
@@ -136,16 +157,36 @@
 </div>
 
 <script>
-    // same sidebar toggle behaviour
+    // sidebar toggle
     document.querySelectorAll('.menu-item .main-link').forEach(link => {
-        link.addEventListener('click', function(e) {
-            if(this.nextElementSibling && this.nextElementSibling.classList.contains('submenu')) {
-                e.preventDefault();
-                let parent = this.parentElement;
-                parent.classList.toggle('open');
-            }
-        });
+      link.addEventListener('click', function(e) {
+        if (this.nextElementSibling && this.nextElementSibling.classList.contains('submenu')) {
+          e.preventDefault();
+          let parent = this.parentElement;
+          parent.classList.toggle('open');
+        }
+      });
     });
+
+    // === Stylish Popup Logic ===
+    const params = new URLSearchParams(window.location.search);
+    const popup = document.getElementById("popup-message");
+
+    function showPopup(message, type) {
+      popup.textContent = message;
+      popup.className = ""; // reset
+      popup.classList.add("show", type);
+      setTimeout(() => {
+        popup.classList.remove("show");
+      }, 3000);
+    }
+
+    if (params.has("error")) {
+      showPopup(decodeURIComponent(params.get("error")), "error");
+    }
+    if (params.has("success")) {
+      showPopup(decodeURIComponent(params.get("success")), "success");
+    }
 </script>
 </body>
 </html>
