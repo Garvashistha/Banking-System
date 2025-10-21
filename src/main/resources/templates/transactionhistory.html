@@ -226,7 +226,8 @@
                 </thead>
                 <tbody>
                 <tr th:each="trans : ${transactions}">
-                    <td th:text="${trans.timestamp}"></td>
+                    <td th:text="${#temporals.format(trans.timestamp, 'dd MMM yyyy, hh:mm a')}"></td>
+
                     <td th:text="${trans.transactionType}"></td>
                     <td th:text="${trans.amount}"></td>
                     <td th:text="${trans.status}"
