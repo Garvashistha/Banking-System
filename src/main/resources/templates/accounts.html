@@ -277,9 +277,16 @@
         <div class="top-bar">
             <h1>Accounts</h1>
             <div class="user-profile" tabindex="0" aria-label="User profile menu">
-                <img src="https://ui-avatars.com/api/?name=" th:alt="${customer.name}" th:src="'https://ui-avatars.com/api/?name=' + ${customer.name}" alt="User Avatar" />
+                <img th:src="${customer != null && customer.profilePhoto != null} ?
+             '/profile/photo/' + ${customer.customerId} :
+             'https://ui-avatars.com/api/?name=' + ${customer.name}"
+                     th:alt="${customer.name}"
+                     alt="User Avatar"
+                     style="width:40px; height:40px; border-radius:50%; border:2px solid #66ccb7; object-fit:cover;" />
                 <div class="dropdown-menu" role="menu" aria-hidden="true">
-                    <a th:href="@{/profile}">Profile</a>
+
+
+                <a th:href="@{/profile}">Profile</a>
                     <a th:href="@{/logout}">Logout</a>
                 </div>
             </div>

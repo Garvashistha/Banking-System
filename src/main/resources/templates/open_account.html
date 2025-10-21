@@ -179,11 +179,15 @@
             <p>WELCOME</p>
             <div class="user-profile" tabindex="0">
                 <!-- Safe fallback for user/customer -->
-                <img th:src="${(customer != null and customer.name != null) ? 'https://ui-avatars.com/api/?name=' + customer.name :
-                               (user != null and user.username != null) ? 'https://ui-avatars.com/api/?name=' + user.username :
-                               'https://ui-avatars.com/api/?name=User'}" alt="User Avatar" />
-                <div class="dropdown-menu">
-                    <a th:href="@{/profile/update}">Profile</a>
+                <img th:src="${customer != null && customer.profilePhoto != null} ?
+             '/profile/photo/' + ${customer.customerId} :
+             'https://ui-avatars.com/api/?name=' + ${customer.name}"
+                     th:alt="${customer.name}"
+                     alt="User Avatar"
+                     style="width:40px; height:40px; border-radius:50%; border:2px solid #66ccb7; object-fit:cover;" />
+                <div class="dropdown-menu" role="menu" aria-hidden="true">
+
+                <a th:href="@{/profile/update}">Profile</a>
                     <a th:href="@{/logout}">Logout</a>
                 </div>
             </div>
