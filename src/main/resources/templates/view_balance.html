@@ -168,10 +168,15 @@
             <h1>View Balance</h1>
             <p th:text="'WELCOME, ' + ${customer != null ? customer.name : user.username}">WELCOME, User</p>
             <div class="user-profile">
-                <img th:alt="${customer != null ? customer.name : user.username}"
-                     th:src="${customer != null ? 'https://ui-avatars.com/api/?name=' + customer.name : 'https://ui-avatars.com/api/?name=' + user.username}" />
-                <div class="dropdown-menu">
-                    <a th:href="@{/profile/update}">Profile</a>
+                <img th:src="${customer != null && customer.profilePhoto != null} ?
+             '/profile/photo/' + ${customer.customerId} :
+             'https://ui-avatars.com/api/?name=' + ${customer.name}"
+                     th:alt="${customer.name}"
+                     alt="User Avatar"
+                     style="width:40px; height:40px; border-radius:50%; border:2px solid #66ccb7; object-fit:cover;" />
+                <div class="dropdown-menu" role="menu" aria-hidden="true">
+
+                <a th:href="@{/profile/update}">Profile</a>
                     <a th:href="@{/logout}">Logout</a>
                 </div>
             </div>
