@@ -179,10 +179,10 @@
             <p>WELCOME</p>
             <div class="user-profile" tabindex="0">
                 <!-- Safe fallback for user/customer -->
-                <img th:src="${customer != null && customer.profilePhoto != null} ?
+                <img th:src="${customer?.profilePhoto != null} ?
              '/profile/photo/' + ${customer.customerId} :
-             'https://ui-avatars.com/api/?name=' + (${customer != null ? customer.name : user.username})"
-                     th:alt="${customer != null ? customer.name : user.username}"
+             'https://ui-avatars.com/api/?name=' + (${customer?.name != null ? customer.name : user.username})"
+                     th:alt="${customer?.name != null ? customer.name : user.username}"
                      alt="User Avatar"
                      style="width:40px; height:40px; border-radius:50%; border:2px solid #66ccb7; object-fit:cover;" />
 

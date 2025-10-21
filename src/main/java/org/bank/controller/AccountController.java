@@ -37,21 +37,23 @@ public class AccountController {
     public String showOpenAccountForm(Model model, Authentication authentication) {
         Customer customer = getCustomerFromAuth(authentication);
 
-        // prepare empty account for form binding (NOT saved yet)
         Account formAccount = new Account();
         formAccount.setBalance(BigDecimal.ZERO);
 
         model.addAttribute("account", formAccount);
         model.addAttribute("activePage", "open_account");
-        return "open_account"; // templates/open_account.html
+        model.addAttribute("customer", customer);
+        model.addAttribute("user", customer.getUser()); // ✅ Added
+
+        return "open_account";
     }
 
     @PostMapping("/open")
     public String openAccount(@ModelAttribute("account") Account account,
-                              Authentication authentication) {
+                              Authentication authentication,
+                              Model model) {
         Customer customer = getCustomerFromAuth(authentication);
 
-        // Always create a new account to avoid binding issues with ID
         Account toSave = new Account();
         toSave.setCustomer(customer);
 
@@ -67,6 +69,14 @@ public class AccountController {
         }
 
         accountService.save(toSave);
+
+        // ✅ Add model attributes again for reload page
+        model.addAttribute("account", new Account());
+        model.addAttribute("activePage", "open_account");
+        model.addAttribute("customer", customer);
+        model.addAttribute("user", customer.getUser());
+        model.addAttribute("success", "Account created successfully!");
+
         return "open_account";
     }
 
@@ -111,12 +121,13 @@ public class AccountController {
     public String viewBalance(Model model, Authentication authentication) {
         Customer customer = getCustomerFromAuth(authentication);
         List<Account> accounts = accountService.findByCustomer(customer);
+
         model.addAttribute("accounts", accounts);
         model.addAttribute("activePage", "balance");
         model.addAttribute("customer", customer);
         model.addAttribute("user", customer.getUser());
 
-        return "view_balance"; // templates/view_balance.html
+        return "view_balance";
     }
 
     // ================== Helper ==================

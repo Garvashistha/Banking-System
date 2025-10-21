@@ -54,7 +54,10 @@ public class TransactionController {
         }
 
         model.addAttribute("transactions", transactions);
+        model.addAttribute("customer", customer);
         model.addAttribute("user", user);
+        model.addAttribute("activePage", "transactionhistory");
+
         return "transactionhistory";
     }
 
@@ -69,7 +72,9 @@ public class TransactionController {
 
         List<Account> accounts = accountService.findByCustomerId(customer.getCustomerId());
         model.addAttribute("accounts", accounts);
+        model.addAttribute("customer", customer);
         model.addAttribute("user", user);
+        model.addAttribute("activePage", "deposit");
 
         return "deposit_form";
     }
@@ -101,7 +106,9 @@ public class TransactionController {
 
         List<Account> accounts = accountService.findByCustomerId(customer.getCustomerId());
         model.addAttribute("accounts", accounts);
+        model.addAttribute("customer", customer);
         model.addAttribute("user", user);
+        model.addAttribute("activePage", "withdraw");
 
         return "withdraw_form";
     }
@@ -136,7 +143,9 @@ public class TransactionController {
 
         model.addAttribute("accounts", accounts);
         model.addAttribute("allAccounts", allAccounts);
+        model.addAttribute("customer", customer);
         model.addAttribute("user", user);
+        model.addAttribute("activePage", "transfer");
 
         return "transfer_form";
     }
