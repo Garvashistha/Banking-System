@@ -4,6 +4,10 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.util.Date;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
+
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -40,8 +44,9 @@ public class Transaction {
     @Column(nullable = false)
     private BigDecimal amount;
 
-    @Column(nullable = false)
+    @Column(name = "timestamp", columnDefinition = "DATETIME", nullable = false)
     private LocalDateTime timestamp;
+
 
     @Column(nullable = false)
     private String status;  // success, failed, pending
