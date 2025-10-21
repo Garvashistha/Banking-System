@@ -64,6 +64,28 @@
         button { background:#3ea89d; border:none; color:white; padding:14px 0; border-radius:8px; font-size:1.1rem; font-weight:600; cursor:pointer; transition: background .3s; }
         button:hover { background:#66ccb7; }
 
+        /* Stylish popup (toast) */
+        #popup-message {
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background-color: #ff4d4d;
+          color: white;
+          padding: 14px 22px;
+          border-radius: 10px;
+          font-weight: 600;
+          font-size: 1rem;
+          box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+          opacity: 0;
+          transform: translateY(-20px);
+          transition: all 0.4s ease;
+          z-index: 9999;
+        }
+        #popup-message.show {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
         @media (max-width: 900px) {
             .container { flex-direction: column; }
             .sidebar { width: 100%; flex-direction: row; overflow-x: auto; }
@@ -73,6 +95,9 @@
     </style>
 </head>
 <body>
+<!-- Stylish Popup Container -->
+<div id="popup-message"></div>
+
 <div class="container">
     <nav class="sidebar">
         <div class="logo">BankSys</div>
@@ -146,16 +171,37 @@
 </div>
 
 <script>
-    // sidebar toggle
+    // Sidebar toggle
     document.querySelectorAll('.menu-item .main-link').forEach(link => {
         link.addEventListener('click', function(e) {
-            if(this.nextElementSibling && this.nextElementSibling.classList.contains('submenu')) {
+            if (this.nextElementSibling && this.nextElementSibling.classList.contains('submenu')) {
                 e.preventDefault();
-                let parent = this.parentElement;
-                parent.classList.toggle('open');
+                this.parentElement.classList.toggle('open');
             }
         });
     });
+
+    // === Stylish popup logic ===
+    const params = new URLSearchParams(window.location.search);
+    const popup = document.getElementById("popup-message");
+
+    function showPopup(message, color = "#ff4d4d") {
+        popup.textContent = message;
+        popup.style.backgroundColor = color;
+        popup.classList.add("show");
+
+        setTimeout(() => {
+            popup.classList.remove("show");
+        }, 3000);
+    }
+
+    if (params.has("error")) {
+        showPopup(decodeURIComponent(params.get("error")), "#ff4d4d"); // red for errors
+    }
+    if (params.has("success")) {
+        showPopup(decodeURIComponent(params.get("success")), "#28a745"); // green for success
+    }
 </script>
+
 </body>
 </html>
