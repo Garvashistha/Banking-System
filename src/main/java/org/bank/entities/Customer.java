@@ -26,7 +26,10 @@ public class Customer {
 
     private String address;
 
-    // One customer per user (unique login credentials)
+    @Lob
+    @Column(name = "profile_photo", columnDefinition = "LONGBLOB")
+    private byte[] profilePhoto;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;

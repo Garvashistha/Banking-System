@@ -2,98 +2,97 @@ package org.bank.controller;
 
 import org.bank.entities.Customer;
 import org.bank.entities.User;
-import org.bank.service.AuthService;
-import org.bank.service.CustomerService;
+import org.bank.repository.CustomerRepository;
+import org.bank.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
+import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.security.Principal;
+import java.util.Optional;
 
 @Controller
 public class ProfileController {
 
-    private final CustomerService customerService;
-    private final AuthService authService;
+    @Autowired
+    private CustomerRepository customerRepository;
 
     @Autowired
-    public ProfileController(CustomerService customerService, AuthService authService) {
-        this.customerService = customerService;
-        this.authService = authService;
-    }
+    private UserRepository userRepository;
 
-    // ================== VIEW PROFILE ==================
-    @GetMapping("/profile")
-    public String viewProfile(Model model, Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return "redirect:/login";
-        }
-
-        String username = authentication.getName();
-        User user = authService.findByUsername(username).orElse(null);
-        if (user == null) {
-            return "redirect:/login";
-        }
-
-        Customer customer = customerService.findByUserId(user.getId());
-        model.addAttribute("customer", customer);
-        return "view_profile";
-    }
-
-    // ================== SHOW UPDATE PROFILE FORM ==================
+    // Show update profile page
     @GetMapping("/profile/update")
-    public String showUpdateForm(Model model, Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return "redirect:/login";
+    public String showUpdateProfilePage(Model model, Principal principal) {
+        Optional<User> optionalUser = userRepository.findByUsername(principal.getName());
+        User user = optionalUser.orElse(null);
+        Customer customer = null;
+        if (user != null) {
+            Optional<Customer> optionalCustomer = customerRepository.findByUser(user);
+            customer = optionalCustomer.orElse(null);
         }
 
-        String username = authentication.getName();
-        User user = authService.findByUsername(username).orElse(null);
-        if (user == null) {
-            return "redirect:/login";
-        }
 
-        Customer customer = customerService.findByUserId(user.getId());
-        model.addAttribute("customer", customer);
+
         model.addAttribute("user", user);
+        model.addAttribute("customer", customer);
+        return "updateprofile";
+    }
+
+    // Handle automatic profile update (with optional image)
+    @PostMapping("/profile/update")
+    public String updateProfile(@ModelAttribute Customer updatedCustomer,
+                                @RequestParam(value = "profileImage", required = false) MultipartFile file,
+                                Principal principal,
+                                Model model) throws IOException {
+
+        Optional<User> optionalUser = userRepository.findByUsername(principal.getName());
+        User user = optionalUser.orElse(null);
+        Customer customer = null;
+        if (user != null) {
+            Optional<Customer> optionalCustomer = customerRepository.findByUser(user);
+            customer = optionalCustomer.orElse(null);
+        }
+
+
+        if (customer != null) {
+            // update basic details
+            customer.setName(updatedCustomer.getName());
+            customer.setAddress(updatedCustomer.getAddress());
+            customer.setPhone(updatedCustomer.getPhone());
+            customer.setEmail(updatedCustomer.getEmail());
+
+            // if new photo uploaded
+            if (file != null && !file.isEmpty()) {
+                customer.setProfilePhoto(file.getBytes());
+            }
+
+            customerRepository.save(customer);
+        }
+
+        // add to model again so Thymeleaf can render properly
+        model.addAttribute("user", user);
+        model.addAttribute("customer", customer);
+        model.addAttribute("success", true);
 
         return "updateprofile";
     }
 
-    // ================== UPDATE PROFILE ==================
-    @PostMapping("/profile/update")
-    public String updateProfile(@RequestParam String name,
-                                @RequestParam String address,
-                                @RequestParam String phone,
-                                @RequestParam String email,
-                                Authentication authentication,
-                                RedirectAttributes redirectAttributes) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return "redirect:/login";
+    // Serve profile photo directly from DB
+    @GetMapping("/profile/photo/{id}")
+    @ResponseBody
+    public ResponseEntity<byte[]> getProfilePhoto(@PathVariable("id") Long id) {
+        Optional<Customer> optCustomer = customerRepository.findById(id);
+
+        if (optCustomer.isPresent() && optCustomer.get().getProfilePhoto() != null) {
+            return ResponseEntity.ok()
+                    .contentType(MediaType.IMAGE_JPEG)
+                    .body(optCustomer.get().getProfilePhoto());
+        } else {
+            return ResponseEntity.notFound().build();
         }
-
-        String username = authentication.getName();
-        User user = authService.findByUsername(username).orElse(null);
-        if (user == null) {
-            return "redirect:/login";
-        }
-
-        Customer customer = customerService.findByUserId(user.getId());
-        if (customer != null) {
-            customer.setName(name);
-            customer.setAddress(address);
-            customer.setPhone(phone);
-            customer.setEmail(email);
-            customerService.save(customer);
-        }
-
-        // Add success flash attribute for popup
-        redirectAttributes.addAttribute("success", "true");
-
-
-        return "redirect:/profile/update";
     }
 }

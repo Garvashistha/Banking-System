@@ -17,7 +17,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 public class DashboardController {
@@ -70,8 +72,12 @@ public class DashboardController {
                 .map(a -> accountService.findById(a.getAccountId()))
                 .toList();
 
-        // 🔹 Load recent transactions freshly
-        List<Transaction> transactions = transactionService.findByCustomer(customer);
+        // 🔹 Load recent transactions freshly and limit to 5 most recent
+        List<Transaction> transactions = transactionService.findByCustomer(customer)
+                .stream()
+                .sorted(Comparator.comparing(Transaction::getTimestamp).reversed()) // latest first
+                .limit(5) // only last 5
+                .collect(Collectors.toList());
 
         System.out.println("=== Dashboard account balances ===");
         for (Account acc : accounts) {
@@ -88,7 +94,7 @@ public class DashboardController {
         model.addAttribute("user", user);
         model.addAttribute("customer", customer);
         model.addAttribute("accounts", accounts);
-        model.addAttribute("transactions", transactions);
+        model.addAttribute("transactions", transactions); // limited to 5
         model.addAttribute("totalAccounts", totalAccounts);
         model.addAttribute("totalBalance", totalBalance);
         model.addAttribute("activePage", "dashboard");
