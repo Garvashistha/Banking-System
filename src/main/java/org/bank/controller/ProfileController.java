@@ -5,7 +5,6 @@ import org.bank.entities.User;
 import org.bank.repository.CustomerRepository;
 import org.bank.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -18,55 +17,80 @@ import java.util.Optional;
 @Controller
 public class ProfileController {
 
-    @Autowired
-    private CustomerRepository customerRepository;
+    private final CustomerRepository customerRepository;
+    private final UserRepository userRepository;
 
     @Autowired
-    private UserRepository userRepository;
-
-    // ================== SHOW UPDATE PROFILE ==================
-    @GetMapping("/profile/update")
-    public String showUpdateProfilePage(Model model, Principal principal) {
-        Optional<User> optionalUser = userRepository.findByUsername(principal.getName());
-        if (optionalUser.isEmpty()) {
-            return "redirect:/login";
-        }
-
-        User user = optionalUser.get();
-        Customer customer = customerRepository.findByUser(user).orElse(null);
-
-        // Prevent null pointer in templates
-        if (customer == null) {
-            customer = new Customer();
-            customer.setUser(user);
-        }
-
-        model.addAttribute("user", user);
-        model.addAttribute("customer", customer);
-        model.addAttribute("activePage", "profile"); // highlight nav if any
-        return "updateprofile";
+    public ProfileController(CustomerRepository customerRepository,
+                             UserRepository userRepository) {
+        this.customerRepository = customerRepository;
+        this.userRepository = userRepository;
     }
+
+    /**
+     * View profile (read-only)
+     * URL: GET /profile/view
+     */
     @GetMapping("/profile/view")
     public String viewProfile(Model model, Principal principal) {
-        Optional<User> optionalUser = userRepository.findByUsername(principal.getName());
-        if (optionalUser.isEmpty()) return "redirect:/login";
+        // principal may be null in some testing contexts; handle defensively
+        User user = null;
+        Customer customer = null;
 
-        User user = optionalUser.get();
-        Optional<Customer> optCustomer = customerRepository.findByUser(user);
+        if (principal != null && principal.getName() != null) {
+            Optional<User> optionalUser = userRepository.findByUsername(principal.getName());
+            if (optionalUser.isPresent()) {
+                user = optionalUser.get();
+                Optional<Customer> optionalCustomer = customerRepository.findByUser(user);
+                customer = optionalCustomer.orElse(null);
+            }
+        }
 
-        optCustomer.ifPresent(customer -> model.addAttribute("customer", customer));
+        // Add to model even if null – templates should render safely
         model.addAttribute("user", user);
+        model.addAttribute("customer", customer);
 
         return "view_profile";
     }
 
+    /**
+     * Show update profile page (GET /profile/update)
+     * Uses the same template name you already have: updateprofile.html
+     */
+    @GetMapping("/profile/update")
+    public String showUpdateProfilePage(Model model, Principal principal) {
+        User user = null;
+        Customer customer = null;
 
-    // ================== HANDLE PROFILE UPDATE ==================
+        if (principal != null && principal.getName() != null) {
+            Optional<User> optionalUser = userRepository.findByUsername(principal.getName());
+            if (optionalUser.isPresent()) {
+                user = optionalUser.get();
+                Optional<Customer> optionalCustomer = customerRepository.findByUser(user);
+                customer = optionalCustomer.orElse(null);
+            }
+        }
+
+        model.addAttribute("user", user);
+        model.addAttribute("customer", customer);
+
+        return "updateprofile";
+    }
+
+    /**
+     * Update profile (POST /profile/update)
+     * Accepts optional file upload "profileImage". Saves data automatically to DB.
+     */
     @PostMapping("/profile/update")
-    public String updateProfile(@ModelAttribute("customer") Customer updatedCustomer,
+    public String updateProfile(@ModelAttribute Customer updatedCustomer,
                                 @RequestParam(value = "profileImage", required = false) MultipartFile file,
                                 Principal principal,
                                 Model model) throws IOException {
+
+        if (principal == null || principal.getName() == null) {
+            // Not authenticated — redirect to login (adjust if your auth flow differs)
+            return "redirect:/login";
+        }
 
         Optional<User> optionalUser = userRepository.findByUsername(principal.getName());
         if (optionalUser.isEmpty()) {
@@ -75,46 +99,47 @@ public class ProfileController {
 
         User user = optionalUser.get();
         Optional<Customer> optionalCustomer = customerRepository.findByUser(user);
+        Customer customer = optionalCustomer.orElse(null);
 
-        if (optionalCustomer.isPresent()) {
-            Customer customer = optionalCustomer.get();
-
-            // Update basic info
+        if (customer != null) {
+            // update fields only when provided (basic overwrite)
             customer.setName(updatedCustomer.getName());
             customer.setAddress(updatedCustomer.getAddress());
             customer.setPhone(updatedCustomer.getPhone());
             customer.setEmail(updatedCustomer.getEmail());
 
-            // Handle photo upload
             if (file != null && !file.isEmpty()) {
+                // save bytes in DB field customer.profilePhoto (byte[])
                 customer.setProfilePhoto(file.getBytes());
             }
 
             customerRepository.save(customer);
-
-            model.addAttribute("customer", customer);
-            model.addAttribute("user", user);
-            model.addAttribute("success", true); // For "Profile updated successfully!" message
-        } else {
-            model.addAttribute("error", "Customer profile not found!");
         }
 
-        model.addAttribute("activePage", "profile");
+        // put updated values back into model for the template
+        model.addAttribute("user", user);
+        model.addAttribute("customer", customer);
+        model.addAttribute("success", true);
+
+        // return update view (you can redirect if you'd prefer flash attributes + redirect)
         return "updateprofile";
     }
 
-    // ================== SERVE PROFILE PHOTO FROM DATABASE ==================
+    /**
+     * Serve profile photo bytes from the DB
+     * GET /profile/photo/{id}
+     */
     @GetMapping("/profile/photo/{id}")
     @ResponseBody
-    public ResponseEntity<byte[]> getProfilePhoto(@PathVariable("id") Long id) {
+    public org.springframework.http.ResponseEntity<byte[]> getProfilePhoto(@PathVariable("id") Long id) {
         Optional<Customer> optCustomer = customerRepository.findById(id);
 
         if (optCustomer.isPresent() && optCustomer.get().getProfilePhoto() != null) {
-            return ResponseEntity.ok()
-                    .contentType(MediaType.IMAGE_JPEG)
+            return org.springframework.http.ResponseEntity.ok()
+                    .contentType(org.springframework.http.MediaType.IMAGE_JPEG)
                     .body(optCustomer.get().getProfilePhoto());
         } else {
-            return ResponseEntity.notFound().build();
+            return org.springframework.http.ResponseEntity.notFound().build();
         }
     }
 }

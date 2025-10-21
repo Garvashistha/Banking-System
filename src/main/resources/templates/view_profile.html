@@ -8,7 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet" />
 
     <style>
-        /* --- Dashboard styling copied --- */
         *, *::before, *::after { box-sizing: border-box; }
         body, html { margin: 0; height: 100%; font-family: 'Poppins', sans-serif; background: #121212; color: #e0e0e0; }
         .container { display: flex; height: 100vh; overflow: hidden; }
@@ -118,13 +117,14 @@
         <!-- Top Bar -->
         <div class="top-bar">
             <h1>View Profile</h1>
-            <p th:text="'WELCOME, ' + (${customer?.name != null ? customer.name : user.username})">WELCOME, User</p>
+            <p th:text="'WELCOME, ' + (${customer != null && customer.name != null ? customer.name : user.username})">WELCOME, User</p>
             <div class="user-profile">
-                <img th:src="${customer?.profilePhoto != null} ?
-                     '/profile/photo/' + ${customer.customerId} :
-                     'https://ui-avatars.com/api/?name=' + (${customer?.name != null ? customer.name : user.username})"
-                     th:alt="${customer?.name != null ? customer.name : user.username}"
-                     alt="User Avatar" />
+                <img th:src="${customer != null && customer.profilePhoto != null} ?
+                   @{/profile/photo/{id}(id=${customer.customerId})} :
+                   ${'https://ui-avatars.com/api/?name=' + (customer != null && customer.name != null ? customer.name : user.username)}"
+                     th:alt="${customer != null && customer.name != null ? customer.name : user.username}"
+                     style="width:40px; height:40px; border-radius:50%; border:2px solid #66ccb7; object-fit:cover;" />
+
                 <div class="dropdown-menu">
                     <a th:href="@{/profile/view}">View Profile</a>
                     <a th:href="@{/profile/update}">Update Profile</a>
@@ -140,7 +140,7 @@
                 <div><strong>Customer ID:</strong> <span th:text="${customer.customerId}"></span></div>
                 <div><strong>Name:</strong> <span th:text="${customer.name}"></span></div>
                 <div><strong>Email:</strong> <span th:text="${customer.email}"></span></div>
-                <div><strong>Phone:</strong> <span th:text="${customer.phoneNumber}"></span></div>
+                <div><strong>Phone:</strong> <span th:text="${customer.phone}"></span></div>
                 <div><strong>Address:</strong> <span th:text="${customer.address}"></span></div>
             </div>
             <p th:if="${customer == null}">No profile data available.</p>
